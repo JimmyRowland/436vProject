@@ -56,9 +56,9 @@ body {
   display: flex;
   flex-direction: row;
   column-gap: 24px;
-  height: 800px;
+  height: 400px;
   padding: 24px;
-  z-index: 100;
+  z-index: 2000;
 }
 #chart1 {
   width: 50%;
@@ -72,6 +72,14 @@ body {
   justify-content: center;
   align-items: center;
 }
+
 .axis-title {
   font-size: 12px;
+}
+#chart2:hover {
+  width: 90vh;
+  height: 90vh;
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }

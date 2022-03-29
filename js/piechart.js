@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { states } from './main';
 
 export function piechart(data) {
   const color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, data.children.length + 1));
@@ -22,7 +23,9 @@ export function piechart(data) {
     .select('#chart2')
     .append('svg')
     .attr('viewBox', [0, 0, width, width])
-    .style('font', '10px sans-serif');
+    .style('font', '10px sans-serif')
+    .attr('width', '100%')
+    .attr('height', '100%');
 
   const g = svg.append('g').attr('transform', `translate(${width / 2},${width / 2})`);
 
@@ -35,7 +38,7 @@ export function piechart(data) {
       while (d.depth > 1) d = d.parent;
       return color(d.data.name);
     })
-    .attr('fill-opacity', (d) => (arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
+    .attr('fill-opacity', (d) => (arcVisible(d.current) ? (d.children ? 1 : 0.8) : 0))
     .attr('pointer-events', (d) => (arcVisible(d.current) ? 'auto' : 'none'))
 
     .attr('d', (d) => arc(d.current));
@@ -102,7 +105,7 @@ export function piechart(data) {
       .filter(function (d) {
         return +this.getAttribute('fill-opacity') || arcVisible(d.target);
       })
-      .attr('fill-opacity', (d) => (arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
+      .attr('fill-opacity', (d) => (arcVisible(d.target) ? (d.children ? 1 : 0.8) : 0))
       .attr('pointer-events', (d) => (arcVisible(d.target) ? 'auto' : 'none'))
 
       .attrTween('d', (d) => () => arc(d.current));
