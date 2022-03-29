@@ -1,5 +1,7 @@
 # Project
 
+### [demo](https://litefarm-visualization.vercel.app/)
+
 ### Install packages
 
 ```
@@ -15,4 +17,5 @@ pnpm dev
 
 ###Credits
 [bubble chart](https://observablehq.com/@ahoak/d3-api-analysis)
+
 [sunburst chart](https://observablehq.com/@ahoak/d3-sunburst-chart)
