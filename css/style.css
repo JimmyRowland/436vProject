@@ -8,12 +8,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 #map {
   width: 100%;
   height: 100vh;
   position: relative;
+  flex-grow: 1;
 }
 
 .legend {
@@ -49,7 +53,25 @@ body {
   z-index: 1000;
 }
 
-#pie {
-  padding: 20px;
-  width: min(96vh, 96vw);
+.chart-container {
+  display: flex;
+  flex-direction: row;
+  column-gap: 24px;
+  height: 800px;
+  padding: 24px;
+}
+#chart1 {
+  width: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#chart2 {
+  width: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.axis-title {
+  font-size: 12px;
 }

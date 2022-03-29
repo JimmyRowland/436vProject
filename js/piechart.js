@@ -19,7 +19,7 @@ export function piechart(data) {
   root.each((d) => (d.current = d));
 
   const svg = d3
-    .select('#pie')
+    .select('#chart2')
     .append('svg')
     .attr('viewBox', [0, 0, width, width])
     .style('font', '10px sans-serif');
@@ -140,3 +140,7 @@ const partition = (data) => {
     .sort((a, b) => b.value - a.value);
   return d3.partition().size([2 * Math.PI, root.height + 1])(root);
 };
+
+export function destroyPieChart() {
+  d3.select('#chart2').select('svg').remove();
+}

@@ -30,7 +30,7 @@ export class GeoMap {
         zoom,
         data: { farmNumberByCountryId, areaByCountryId },
       },
-      farmAreaByFarmId,
+      farmWithAreaByFarmId,
     },
     { onCountryChange },
   ) {
@@ -51,7 +51,7 @@ export class GeoMap {
       columnName,
       data: { farmNumberByCountryId, areaByCountryId },
     };
-    this.farmAreaByFarmId = farmAreaByFarmId;
+    this.farmWithAreaByFarmId = farmWithAreaByFarmId;
     this.geoIdLayerMap = {};
     this.onCountryChange = onCountryChange;
     this.circles = [];
@@ -92,7 +92,7 @@ export class GeoMap {
       .domain(vis.choropleth.choroplethDomain)
       .range(d3.schemeBlues[vis.choropleth.choroplethDomain.length + 1]);
     vis.symbolScale.domain(
-      d3.extent(Object.values(vis.farmAreaByFarmId).map(({ total_area }) => total_area)),
+      d3.extent(Object.values(vis.farmWithAreaByFarmId).map(({ total_area }) => total_area)),
     );
     vis.renderVis();
   }
@@ -182,7 +182,7 @@ export class GeoMap {
     for (const circle of vis.circles) {
       vis.map.removeLayer(circle);
     }
-    for (const farm of Object.values(vis.farmAreaByFarmId)) {
+    for (const farm of Object.values(vis.farmWithAreaByFarmId)) {
       const circle = L.circle([farm.grid_points.lat, farm.grid_points.lng], {
         color: 'red',
         fillColor: '#f03',

@@ -5,12 +5,22 @@ import {
   farmNumberByCountryIdCenter,
   farmNumberByCountryIdDomain,
   farmNumberByCountryIdZoom,
-  getFarmAreaByFarmId,
+  getCropGroups,
+  getfarmWithAreaByFarmId,
   getFarmNumberByCountryId,
+  getFarmsByUserCount,
   getFarmsCountryIdMap,
   getTotalAreaByCountryId,
+  getFarmsByUserCountAreaBucket,
+  getFarmPercentageByUserCountGroup,
+  getFarmsByCertificationCertifier,
+  getCertifierGroups,
 } from './utils';
-import { piechart } from './piechart';
+import { destroyPieChart, piechart } from './piechart';
+import produce from 'immer';
+import { Barchart } from './barChart';
+import { BubbleChart } from './bubbleChart';
+import { bubbleChart } from './bubbleChart2';
 
 let URI;
 const VITE_ENV = import.meta.env.VITE_ENV || 'development';
@@ -26,7 +36,7 @@ if (import.meta.env.VITE_API_URL?.length) {
   }
 }
 
-const states = {
+export const states = {
   farms: {},
   countryNameIdMap: {},
   crops: {},
@@ -34,47 +44,48 @@ const states = {
   cropVarietiesByFarmId: {},
   cropVarietiesByCropId: {},
   locationsByFarmId: {},
+  locationTypes: [],
+  locationColorScale: undefined,
   country_id: undefined,
   geoMap: undefined,
+  barChart: undefined,
+  chart1: {
+    height: 0,
+    width: 0,
+  },
+  chart2: {
+    height: 0,
+    width: 0,
+  },
+};
+
+export const filteredStates = {
+  farmWithAreaByFarmId: {},
+  //barchart
+  farmsByUserCountAreaBucket: {},
 };
 
 Promise.all([
   d3.json('data/world_countries.json'),
+  // original source
   // d3.csv(
   //   'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv',
   // ),
-  // d3.json(`${URI}/visualization/farm`),
-  // d3.json(`${URI}/visualization/variety`),
-  // d3.json(`${URI}/visualization/crop`),
-  // d3.json(`${URI}/visualization/location`),
+
   d3.json(`data/farm.json`),
   d3.json(`data/variety.json`),
   d3.json(`data/crop.json`),
   d3.json(`data/location.json`),
+  // db endpoints:
+  // d3.json(`${URI}/visualization/farm`),
+  // d3.json(`${URI}/visualization/variety`),
+  // d3.json(`${URI}/visualization/crop`),
+  // d3.json(`${URI}/visualization/location`),
 ])
   .then((data) => {
-    for (const cropVariety of data[2]) {
-      states.cropVarietiesByFarmId[cropVariety.farm_id] =
-        states.cropVarietiesByFarmId[cropVariety.farm_id] || [];
-      states.cropVarietiesByFarmId[cropVariety.farm_id].push(cropVariety);
-      states.cropVarietiesByCropId[cropVariety.crop_id] =
-        states.cropVarietiesByCropId[cropVariety.crop_id] || [];
-      states.cropVarietiesByCropId[cropVariety.crop_id].push(cropVariety);
-    }
-    for (const crop of data[3]) {
-      states.crops[crop.crop_id] = crop;
-    }
-    for (const farm of data[1]) {
-      states.farms[farm.farm_id] = farm;
-    }
-    for (const location of data[4]) {
-      states.locations[location.location_id] = location;
-      states.locationsByFarmId[location.farm_id] = states.locationsByFarmId[location.farm_id] || [];
-      states.locationsByFarmId[location.farm_id].push(location);
-    }
-    for (const country of data[0].features) {
-      states.countryNameIdMap[country.properties.name] = country.id;
-    }
+    fillCache(data);
+    fillChartDivWidth();
+    console.log(states);
 
     const farmNumberByCountryId = getFarmNumberByCountryId(states.farms, states.countryNameIdMap);
     const areaByCountryId = getTotalAreaByCountryId(
@@ -82,7 +93,9 @@ Promise.all([
       states.countryNameIdMap,
       states.locationsByFarmId,
     );
-    const farmAreaByFarmId = getFarmAreaByFarmId(states.farms, states.locationsByFarmId);
+    filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
+      getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
+    );
     states.geoMap = new GeoMap(
       {
         parentElement: '#map',
@@ -96,7 +109,7 @@ Promise.all([
           center: farmNumberByCountryIdCenter,
           data: { farmNumberByCountryId, areaByCountryId },
         },
-        farmAreaByFarmId,
+        farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
         // pieChart: getCountryCropGroupData()
       },
       { onCountryChange },
@@ -104,8 +117,70 @@ Promise.all([
 
     states.geoMap.updateVis();
     piechart(getCountryCropGroupData());
+    states.barChart = new Barchart({
+      parentElement: '#chart1',
+    });
+    states.barChart.updateVis();
+    // console.log(getCertifierGroups(Object.values(states.farms)))
+    bubbleChart();
+    // apiChart()
+    // states.bubbleChart = new BubbleChart(
+    //   {
+    //     parentElement: '#chart1',
+    //   },
+    // );
+    // states.bubbleChart.updateVis()
   })
   .catch((error) => console.error(error));
+
+function fillCache(data) {
+  for (const cropVariety of data[2]) {
+    states.cropVarietiesByFarmId = produce(
+      states.cropVarietiesByFarmId,
+      (cropVarietiesByFarmId) => {
+        cropVarietiesByFarmId[cropVariety.farm_id] =
+          cropVarietiesByFarmId[cropVariety.farm_id] || [];
+        cropVarietiesByFarmId[cropVariety.farm_id].push(cropVariety);
+      },
+    );
+    states.cropVarietiesByCropId = produce(
+      states.cropVarietiesByCropId,
+      (cropVarietiesByCropId) => {
+        cropVarietiesByCropId[cropVariety.crop_id] =
+          cropVarietiesByCropId[cropVariety.crop_id] || [];
+        cropVarietiesByCropId[cropVariety.crop_id].push(cropVariety);
+      },
+    );
+  }
+  for (const crop of data[3]) {
+    states.crops = produce(states.crops, (crops) => {
+      crops[crop.crop_id] = crop;
+    });
+  }
+  for (const farm of data[1]) {
+    states.farms = produce(states.farms, (farms) => {
+      farms[farm.farm_id] = farm;
+    });
+  }
+  const locationTypes = new Set();
+  for (const location of data[4]) {
+    states.locations = produce(states.locations, (locations) => {
+      locations[location.location_id] = location;
+    });
+    states.locationsByFarmId = produce(states.locationsByFarmId, (locationsByFarmId) => {
+      locationsByFarmId[location.farm_id] = locationsByFarmId[location.farm_id] || [];
+      locationsByFarmId[location.farm_id].push(location);
+    });
+    locationTypes.add(location.type);
+  }
+  states.locationTypes = produce(states.locationTypes, (_) => Array.from(locationTypes));
+  states.locationColorScale = d3.scaleOrdinal().domain(states.locationTypes).range(d3.schemeSet1);
+  for (const country of data[0].features) {
+    states.countryNameIdMap = produce(states.countryNameIdMap, (countryNameIdMap) => {
+      countryNameIdMap[country.properties.name] = country.id;
+    });
+  }
+}
 
 function onCountryChange(country_id) {
   states.country_id = country_id;
@@ -118,36 +193,16 @@ function getCountryCropGroupData() {
     name: farms[0].country_name,
     children: getCropGroups(farms),
   }));
-  return { name: 'country', children };
+  return { name: 'crop_group', children: getCropGroups(Object.values(states.farms)) };
 }
 
-function getCropGroups(farms) {
-  const cropsByCropGroup = {};
-  for (const { farm_id } of farms) {
-    const cropVarieties = states.cropVarietiesByFarmId[farm_id];
-    if (cropVarieties) {
-      for (const cropVariety of cropVarieties) {
-        const crop = states.crops[cropVariety.crop_id];
-        cropsByCropGroup[crop.crop_group] = cropsByCropGroup[crop.crop_group] || {};
-        cropsByCropGroup[crop.crop_group][crop.crop_id] = cropsByCropGroup[crop.crop_group][
-          crop.crop_id
-        ] || {
-          name: crop.crop_common_name,
-          children: [],
-        };
-        cropsByCropGroup[crop.crop_group][crop.crop_id].children.push({
-          name: cropVariety.crop_variety_name,
-          value: 1,
-        });
-      }
-    }
-  }
-  return (
-    Object.entries(cropsByCropGroup).map(([crop_group, crops]) => ({
-      name: crop_group,
-      children: Object.values(crops).map((crop) => crop),
-    })) || []
-  );
+function fillChartDivWidth() {
+  const chartDiv1 = document.getElementById('chart1');
+  states.chart1.width = chartDiv1.offsetWidth;
+  states.chart1.height = chartDiv1.offsetHeight;
+  const chartDiv2 = document.getElementById('chart2');
+  states.chart2.width = chartDiv2.offsetWidth;
+  states.chart2.height = chartDiv2.offsetHeight;
 }
 
 function logStates(data) {
