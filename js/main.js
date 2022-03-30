@@ -121,6 +121,14 @@ Promise.all([
       parentElement: '#chart1',
     });
     states.barChart.updateVis();
+    states.barChart.updateVis();
+    states.barChart.updateVis();
+    states.barChart.renderVis();
+    // states.barChart.updateVis();
+    // states.barChart.updateVis();
+    //
+    states.barChart.renderVis();
+
     // console.log(getCertifierGroups(Object.values(states.farms)))
     bubbleChart();
     // apiChart()

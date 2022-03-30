@@ -83,3 +83,14 @@ body {
   right: 0;
   bottom: 0;
 }
+.clickable {
+  cursor: pointer;
+}
+.non-clickable {
+  pointer-events: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

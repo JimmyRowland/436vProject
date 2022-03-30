@@ -7,14 +7,11 @@ export function responsiveSquareChartContainer(parentElement) {
     .select(parentElement)
     .append('div')
     .attr('style', `width: ${squareDim}px; height: ${squareDim}px`)
-    .on('mouseenter', (event, d) => {
-      console.log('in');
+    .on('mouseover', (event, d) => {
       const windowWidth = d3.min([window.innerWidth, window.innerHeight]);
-      d3.select(event.target).attr('width', windowWidth).attr('height', windowWidth);
+      d3.select(event.target).attr('style', `width: ${windowWidth}px; height: ${windowWidth}px`);
     })
-    .on('mouseout', (event, d) => {
-      console.log('out');
-
-      d3.select(event.target).attr('width', squareDim).attr('height', squareDim);
+    .on('mouseleave', (event, d) => {
+      d3.select(event.target).attr('style', `width: ${squareDim}px; height: ${squareDim}px`);
     });
 }

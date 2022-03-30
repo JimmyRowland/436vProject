@@ -2,9 +2,20 @@ import * as d3 from 'd3';
 import { filteredStates, states } from './main';
 import {
   areaAggregationBreakpoints,
+  getFarmCountByUserCountGroup,
   getFarmPercentageByUserCountGroup,
   getFarmsByUserCountAreaBucket,
 } from './utils';
+
+const buttonTextMap = {
+  '%': { group: getFarmPercentageByUserCountGroup, getMax: () => 100, format: (d) => d + '%' },
+  count: {
+    group: getFarmCountByUserCountGroup,
+    getMax: (data) =>
+      d3.max(data, (d) => areaAggregationBreakpoints.reduce((sum, key) => sum + (d[key] || 0), 0)),
+    format: (d) => d,
+  },
+};
 
 export class Barchart {
   /**
@@ -83,7 +94,23 @@ export class Barchart {
       .attr('x', 5)
       .attr('y', 0)
       .attr('dy', 20)
-      .text('farms');
+      .text('farms by');
+
+    const button = vis.svg.append('g').attr('transform', `translate(60,20)`);
+
+    vis.buttonContainer = button
+      .append('rect')
+      .attr('x', -4)
+      .attr('y', -14)
+      .attr('width', 60)
+      .attr('height', 20)
+      .attr('fill', 'lightgrey')
+      .attr('class', 'clickable')
+      .on('click', () => {
+        vis.buttonText.text(vis.buttonText.text() === '%' ? 'count' : '%');
+        vis.updateVis();
+      });
+    vis.buttonText = button.append('text').attr('class', 'axis-title non-clickable').text('%');
   }
 
   /**
@@ -94,17 +121,20 @@ export class Barchart {
     filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(
       Object.values(filteredStates.farmWithAreaByFarmId),
     );
-    vis.data = getFarmPercentageByUserCountGroup(filteredStates.farmsByUserCountAreaBucket);
-    vis.stackedData = d3.stack().keys(areaAggregationBreakpoints.reverse())(vis.data);
+    const buttonText = vis.buttonText.text();
+    vis.data = buttonTextMap[buttonText].group(filteredStates.farmsByUserCountAreaBucket);
+
+    vis.stackedData = d3.stack().keys([...areaAggregationBreakpoints].reverse())(vis.data);
+
     vis.xScale.domain(Object.keys(filteredStates.farmsByUserCountAreaBucket).sort());
-    vis.yScale.domain([0, 100]);
+    vis.yScale.domain([0, buttonTextMap[buttonText].getMax(vis.data)]);
     vis.yAxis = d3
       .axisLeft(vis.yScale)
       .tickSize(-vis.width)
       .tickPadding(10)
       .ticks(5)
       .tickSizeOuter(0)
-      .tickFormat((d) => d + '%');
+      .tickFormat(buttonTextMap[buttonText].format);
     vis.xAxis = d3.axisBottom(vis.xScale).tickSizeOuter(0);
     vis.renderVis();
   }
@@ -118,12 +148,14 @@ export class Barchart {
       .selectAll('.bar')
       .data(vis.stackedData)
       .join('g')
+      .attr('class', 'bar')
       .attr('fill', (d) => vis.colorScale(d.key))
       .selectAll('rect')
       .data((d) => d)
       .join('rect')
+      .transition()
       .style('opacity', 1)
-      .attr('class', (d) => `bar${d.gender === states.gender ? ' bar-selected' : ''}`)
+      .attr('class', (d) => `rect${d.gender === states.gender ? ' bar-selected' : ''}`)
       .attr('x', (d) => vis.xScale(d.data.number_of_users))
       .attr('width', vis.xScale.bandwidth())
       .attr('height', (d) => vis.yScale(d[0]) - vis.yScale(d[1]))
@@ -142,8 +174,8 @@ export class Barchart {
     //   })
     // ;
 
-    vis.xAxisG.call(vis.xAxis);
+    vis.xAxisG.transition().call(vis.xAxis);
 
-    vis.yAxisG.call(vis.yAxis);
+    vis.yAxisG.transition().call(vis.yAxis);
   }
 }

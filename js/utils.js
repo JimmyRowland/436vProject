@@ -98,7 +98,7 @@ export function getCropGroups(farms) {
 }
 
 //Percent stacked bar chart
-export const areaAggregationBreakpoints = [0, 10000, 100000].reverse();
+export const areaAggregationBreakpoints = produce([], (_) => [0, 10000, 100000].reverse());
 export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   (areaBreakpointsLabelMap, area, index) => {
     areaBreakpointsLabelMap[area] =
