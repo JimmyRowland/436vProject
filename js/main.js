@@ -15,6 +15,7 @@ import {
   getFarmPercentageByUserCountGroup,
   getFarmsByCertificationCertifier,
   getCertifierGroups,
+  areaAggregationBreakpoints,
 } from './utils';
 import { destroyPieChart, piechart } from './piechart';
 import produce from 'immer';
@@ -59,7 +60,18 @@ export const states = {
   },
 };
 
+export const filters = {
+  barchart: {
+    area: areaAggregationBreakpoints.reduce((filter, breakpoint) => {
+      filter[breakpoint] = true;
+      return filter;
+    }, {}),
+    userCount: {},
+  },
+};
+
 export const filteredStates = {
+  farms: {},
   farmWithAreaByFarmId: {},
   //barchart
   farmsByUserCountAreaBucket: {},
@@ -85,7 +97,13 @@ Promise.all([
   .then((data) => {
     fillCache(data);
     fillChartDivWidth();
-    console.log(states);
+    filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
+      getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
+    );
+    updateFilteredStates();
+    console.log(filters.barchart.area);
+    console.log(filteredStates.farms);
+    //does not need filter when location chart is not implemented
 
     const farmNumberByCountryId = getFarmNumberByCountryId(states.farms, states.countryNameIdMap);
     const areaByCountryId = getTotalAreaByCountryId(
@@ -93,9 +111,7 @@ Promise.all([
       states.countryNameIdMap,
       states.locationsByFarmId,
     );
-    filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
-      getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
-    );
+
     states.geoMap = new GeoMap(
       {
         parentElement: '#map',
@@ -169,7 +185,9 @@ function fillCache(data) {
     states.farms = produce(states.farms, (farms) => {
       farms[farm.farm_id] = farm;
     });
+    filters.barchart.userCount[farm.number_of_users] = true;
   }
+
   const locationTypes = new Set();
   for (const location of data[4]) {
     states.locations = produce(states.locations, (locations) => {
@@ -211,6 +229,20 @@ function fillChartDivWidth() {
   const chartDiv2 = document.getElementById('chart2');
   states.chart2.width = chartDiv2.offsetWidth;
   states.chart2.height = chartDiv2.offsetHeight;
+}
+
+function updateFilteredStates() {
+  filteredStates.farms = produce([], () =>
+    Object.values(filteredStates.farmWithAreaByFarmId).filter((farm) => {
+      const areaBucket = areaAggregationBreakpoints.find((area) => area <= farm.total_area);
+      return filters.barchart.area[areaBucket] && filters.barchart.userCount[farm.number_of_users];
+    }),
+  );
+}
+
+export function updateCharts() {
+  updateFilteredStates();
+  states.barChart.updateVis();
 }
 
 function logStates(data) {

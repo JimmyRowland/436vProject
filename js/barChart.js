@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
-import { filteredStates, states } from './main';
+import { filteredStates, filters, states, updateCharts } from './main';
 import {
   areaAggregationBreakpoints,
+  areaBreakpointsLabelMap,
   getFarmCountByUserCountGroup,
   getFarmPercentageByUserCountGroup,
   getFarmsByUserCountAreaBucket,
@@ -29,7 +30,7 @@ export class Barchart {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || states.chart1.width,
       containerHeight: _config.containerHeight || states.chart1.height,
-      margin: _config.margin || { top: 32, right: 10, bottom: 40, left: 40 },
+      margin: _config.margin || { top: 32, right: 130, bottom: 40, left: 40 },
       reverseOrder: _config.reverseOrder || false,
       tooltipPadding: _config.tooltipPadding || 15,
     };
@@ -82,8 +83,8 @@ export class Barchart {
     vis.chart
       .append('text')
       .attr('class', 'axis-title')
-      .attr('y', vis.height + 24)
-      .attr('x', vis.width + 4)
+      .attr('y', vis.height + 8)
+      .attr('x', vis.width + 40)
       .attr('dy', '.71em')
       .style('text-anchor', 'end')
       .text('members/farm');
@@ -95,6 +96,81 @@ export class Barchart {
       .attr('y', 0)
       .attr('dy', 20)
       .text('farms by');
+
+    const barFilters = vis.svg
+      .append('g')
+      .attr('class', 'bar-filter')
+      .attr('transform', `translate(${vis.width + 46}, 0)`);
+
+    barFilters
+      .append('text')
+      .attr('class', 'axis-title')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('dy', 20)
+      .text('farm size');
+
+    for (const index in areaAggregationBreakpoints) {
+      const breakpoint = areaAggregationBreakpoints[index];
+      const label = barFilters
+        .append('g')
+        .attr('id', `bar-area-label${index}`)
+        .attr('class', `bar-label non-selectable clickable`)
+        .attr('transform', `translate(0, ${28 + 20 * index})`)
+        .attr('opacity', filters.barchart.area[breakpoint] ? 1 : 0.2)
+        .on('click', () => {
+          filters.barchart.area[breakpoint] = !filters.barchart.area[breakpoint];
+          d3.select(`#bar-area-label${index}`).attr(
+            'opacity',
+            filters.barchart.area[breakpoint] ? 1 : 0.2,
+          );
+          updateCharts();
+        });
+
+      label
+        .append('rect')
+        .attr('width', 16)
+        .attr('height', 16)
+        .attr('fill', vis.colorScale(breakpoint));
+
+      label.append('text').text(areaBreakpointsLabelMap[breakpoint]).attr('x', 24).attr('y', 12);
+    }
+
+    barFilters
+      .append('text')
+      .attr('class', 'axis-title')
+      .attr('x', 0)
+      .attr('y', 20 * areaAggregationBreakpoints.length + 20)
+      .attr('dy', 20)
+      .text('number of users/farm');
+
+    const userCounts = Object.keys(filters.barchart.userCount).sort();
+    for (const index in userCounts) {
+      const number_of_users = userCounts[index];
+      const label = barFilters
+        .append('g')
+        .attr('id', `bar-user-label${index}`)
+        .attr('class', `bar-label non-selectable clickable`)
+        .attr(
+          'transform',
+          `translate(0, ${48 + 20 * (+index + areaAggregationBreakpoints.length)})`,
+        )
+        .attr('opacity', filters.barchart.userCount[number_of_users] ? 1 : 0.2)
+        .on('click', () => {
+          filters.barchart.userCount[number_of_users] = !filters.barchart.userCount[
+            number_of_users
+          ];
+          d3.select(`#bar-user-label${index}`).attr(
+            'opacity',
+            filters.barchart.userCount[number_of_users] ? 1 : 0.2,
+          );
+          updateCharts();
+        });
+
+      label.append('rect').attr('width', 80).attr('height', 16).attr('fill', 'lightgray');
+
+      label.append('text').text(number_of_users).attr('x', 32).attr('y', 12);
+    }
 
     const button = vis.svg.append('g').attr('transform', `translate(60,20)`);
 
@@ -118,12 +194,9 @@ export class Barchart {
    */
   updateVis() {
     let vis = this;
-    filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(
-      Object.values(filteredStates.farmWithAreaByFarmId),
-    );
+    filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(filteredStates.farms);
     const buttonText = vis.buttonText.text();
     vis.data = buttonTextMap[buttonText].group(filteredStates.farmsByUserCountAreaBucket);
-
     vis.stackedData = d3.stack().keys([...areaAggregationBreakpoints].reverse())(vis.data);
 
     vis.xScale.domain(Object.keys(filteredStates.farmsByUserCountAreaBucket).sort());
@@ -160,6 +233,19 @@ export class Barchart {
       .attr('width', vis.xScale.bandwidth())
       .attr('height', (d) => vis.yScale(d[0]) - vis.yScale(d[1]))
       .attr('y', (d) => vis.yScale(d[1]));
+
+    vis.chart
+      .selectAll('rect')
+      .on('mouseover', (event, d) => {
+        d3.select('#tooltip')
+          .style('display', 'block')
+          .style('left', event.pageX + vis.config.tooltipPadding + 'px')
+          .style('top', event.pageY - 2 * vis.config.tooltipPadding + 'px')
+          .html(getTooltipContent(d));
+      })
+      .on('mouseleave', () => {
+        d3.select('#tooltip').style('display', 'none');
+      });
     //
     // // Tooltip event listeners
     // bars
@@ -178,4 +264,25 @@ export class Barchart {
 
     vis.yAxisG.transition().call(vis.yAxis);
   }
+}
+
+function getTooltipContent(d) {
+  let sum = d[1];
+  const bracket = Object.keys(d.data)
+    .sort()
+    .find((bracket) => {
+      if (bracket === 'number_of_users') return false;
+      sum -= +d.data[bracket];
+      return Math.abs(sum) < 0.0001;
+    });
+  return `
+              <div class="tooltip-title">farms</div>
+              <ul>
+                <li>number of farms: ${
+                  filteredStates.farmsByUserCountAreaBucket[d.data.number_of_users][bracket].length
+                }</li>
+                <li>pecentage: ${Math.round(d.data[bracket] * 100) / 100}%</li>
+                <li>number of users: ${d.data.number_of_users}</li>
+              </ul>
+            `;
 }

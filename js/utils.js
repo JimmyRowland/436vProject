@@ -103,8 +103,8 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   (areaBreakpointsLabelMap, area, index) => {
     areaBreakpointsLabelMap[area] =
       index === 0
-        ? '<' + areaAggregationBreakpoints[index]
-        : areaAggregationBreakpoints[index - 1] + '-' + areaAggregationBreakpoints[index];
+        ? `>${areaAggregationBreakpoints[index]} \u33A1`
+        : `${areaAggregationBreakpoints[index]}-${areaAggregationBreakpoints[index - 1]} \u33A1`;
     return areaBreakpointsLabelMap;
   },
   {},
