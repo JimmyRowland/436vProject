@@ -2,6 +2,43 @@ body {
   margin: 0;
 }
 
+.container {
+  display: grid;
+  grid-template-columns: 0.7fr 2fr 2fr 0.7fr;
+  grid-template-rows: 0.3fr 1.1fr 1.5fr 5fr;
+  gap: 14px 22px;
+  grid-auto-flow: row;
+  grid-template-areas:
+    '. header header .'
+    '. map map .'
+    '. radialchart bubblechart .'
+    '. barchart barchart .';
+}
+
+.header {
+  grid-area: header;
+}
+
+.map {
+  grid-area: map;
+}
+
+.barchart {
+  grid-area: barchart;
+}
+
+.radialchart {
+  grid-area: radialchart;
+}
+
+.bubblechart {
+  grid-area: bubblechart;
+}
+
+h1 {
+  text-align: center;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -52,6 +89,7 @@ body {
   z-index: 1000;
 }
 
+/*
 .chart-container {
   display: flex;
   flex-direction: row;
@@ -72,10 +110,6 @@ body {
   justify-content: center;
   align-items: center;
 }
-
-.axis-title {
-  font-size: 12px;
-}
 #chart2:hover {
   width: 90vh;
   height: 90vh;
@@ -83,6 +117,11 @@ body {
   right: 0;
   bottom: 0;
 }
+*/
+.axis-title {
+  font-size: 12px;
+}
+
 .clickable {
   cursor: pointer;
 }
