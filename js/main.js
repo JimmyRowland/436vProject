@@ -97,13 +97,12 @@ Promise.all([
   .then((data) => {
     fillCache(data);
     fillChartDivWidth();
+    //does not need filter when location chart is not implemented
+
     filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
       getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
     );
     updateFilteredStates();
-    console.log(filters.barchart.area);
-    console.log(filteredStates.farms);
-    //does not need filter when location chart is not implemented
 
     const farmNumberByCountryId = getFarmNumberByCountryId(states.farms, states.countryNameIdMap);
     const areaByCountryId = getTotalAreaByCountryId(
@@ -137,23 +136,7 @@ Promise.all([
       parentElement: '#chart1',
     });
     states.barChart.updateVis();
-    states.barChart.updateVis();
-    states.barChart.updateVis();
-    states.barChart.renderVis();
-    // states.barChart.updateVis();
-    // states.barChart.updateVis();
-    //
-    states.barChart.renderVis();
-
-    // console.log(getCertifierGroups(Object.values(states.farms)))
     bubbleChart();
-    // apiChart()
-    // states.bubbleChart = new BubbleChart(
-    //   {
-    //     parentElement: '#chart1',
-    //   },
-    // );
-    // states.bubbleChart.updateVis()
   })
   .catch((error) => console.error(error));
 

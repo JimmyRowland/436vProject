@@ -4,6 +4,7 @@ import {
   areaAggregationBreakpoints,
   areaBreakpointsLabelMap,
   getFarmCountByUserCountGroup,
+  getFarmPercentageByUserCountAreaBucket,
   getFarmPercentageByUserCountGroup,
   getFarmsByUserCountAreaBucket,
 } from './utils';
@@ -196,7 +197,7 @@ export class Barchart {
     let vis = this;
     filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(filteredStates.farms);
     // FIXME: this is unnecessary when percentage is selected
-    filteredStates.farmPercentageByUserCountAreaBucket = getFarmPercentageByUserCountGroup(
+    filteredStates.farmPercentageByUserCountAreaBucket = getFarmPercentageByUserCountAreaBucket(
       filteredStates.farmsByUserCountAreaBucket,
     );
     const buttonText = vis.buttonText.text();

@@ -139,17 +139,24 @@ export function getFarmsByUserCountAreaBucket(farmsWithArea) {
 }
 
 export function getFarmPercentageByUserCountAreaBucket(farmsByUserCountAreaBucket) {
-  return Object.entries(farmsByUserCountAreaBucket).map(([number_of_users, farmsByAreaBucket]) => {
-    const sum = Object.values(farmsByUserCountAreaBucket[number_of_users]).reduce(
-      (sum, farms) => sum + farms.length,
-      0,
-    );
-    return areaAggregationBreakpoints.reduce((group, areaBucket) => {
-      group[areaBucket] =
-        ((farmsByUserCountAreaBucket[number_of_users]?.[areaBucket]?.length || 0) / sum) * 100;
-      return group;
-    }, {});
-  }, {});
+  return Object.entries(farmsByUserCountAreaBucket).reduce(
+    (farmPercentageByUserCountAreaBucket, [number_of_users, farmsByAreaBucket]) => {
+      const sum = Object.values(farmsByUserCountAreaBucket[number_of_users]).reduce(
+        (sum, farms) => sum + farms.length,
+        0,
+      );
+      farmPercentageByUserCountAreaBucket[number_of_users] = areaAggregationBreakpoints.reduce(
+        (group, areaBucket) => {
+          group[areaBucket] =
+            ((farmsByUserCountAreaBucket[number_of_users]?.[areaBucket]?.length || 0) / sum) * 100;
+          return group;
+        },
+        {},
+      );
+      return farmPercentageByUserCountAreaBucket;
+    },
+    {},
+  );
 }
 
 export function getFarmCountByUserCountGroup(farmsByUserCountAreaBucket) {
