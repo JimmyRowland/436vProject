@@ -61,7 +61,7 @@ export const states = {
 
 export const filteredStates = {
   farmWithAreaByFarmId: {},
-  //barchart
+  // barchart
   farmsByUserCountAreaBucket: {},
 };
 
@@ -96,43 +96,44 @@ Promise.all([
     filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
       getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
     );
-    // states.geoMap = new GeoMap(
-    //   {
-    //     parentElement: '#map',
-    //   },
-    //   data[0],
-    //   {
-    //     choropleth: {
-    //       choroplethDomain: farmNumberByCountryIdDomain,
-    //       choroplethData: farmNumberByCountryId,
-    //       zoom: farmNumberByCountryIdZoom,
-    //       center: farmNumberByCountryIdCenter,
-    //       data: { farmNumberByCountryId, areaByCountryId },
-    //     },
-    //     farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
-    //     // pieChart: getCountryCropGroupData()
-    //   },
-    //   { onCountryChange },
-    // );
+    states.geoMap = new GeoMap(
+      {
+        parentElement: '#map',
+      },
+      data[0],
+      {
+        choropleth: {
+          choroplethDomain: farmNumberByCountryIdDomain,
+          choroplethData: farmNumberByCountryId,
+          zoom: farmNumberByCountryIdZoom,
+          center: farmNumberByCountryIdCenter,
+          data: { farmNumberByCountryId, areaByCountryId },
+        },
+        farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
+        // pieChart: getCountryCropGroupData()
+      },
+      { onCountryChange },
+    );
 
-    // states.geoMap.updateVis();
-    // piechart(getCountryCropGroupData());
+    states.geoMap.updateVis();
+
     states.myPiechart = new MyPieChart({
       parentElement: '#chart2',
     }, getCountryCropGroupData());
+
     states.barChart = new Barchart({
       parentElement: '#chart1',
     });
     states.barChart.updateVis();
     // console.log(getCertifierGroups(Object.values(states.farms)))
-    bubbleChart();
-    // apiChart()
-    // states.bubbleChart = new BubbleChart(
-    //   {
-    //     parentElement: '#chart1',
-    //   },
-    // );
-    // states.bubbleChart.updateVis()
+    // bubbleChart();
+    apiChart()
+    states.bubbleChart = new BubbleChart(
+      {
+        parentElement: '#chart1',
+      },
+    );
+    states.bubbleChart.updateVis()
   })
   .catch((error) => console.error(error));
 

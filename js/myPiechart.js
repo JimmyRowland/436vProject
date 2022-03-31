@@ -19,24 +19,18 @@ export class MyPieChart {
     constructor(_config, _data) {
         this.config = {
             parentElement: _config.parentElement,
-            containerWidth: _config.containerWidth || 940,
+            containerWidth: _config.containerWidth || 840,
             margin: _config.margin || { top: 20, right: 20, bottom: 20, left: 20 }
         }
         this.data = _data;
         this.initVis();
     }
 
-    /**
-     * We initialize scales/axes and append static elements, such as axis titles.
-     */
     initVis() {
         let vis = this;
 
-        // Calculate inner chart size. Margin specifies the space around the actual chart.
         vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
-        // vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
 
-        // Initialize scales
         vis.colorScale = scaleOrdinal(quantize(
             interpolateRainbow,
             vis.data.children.length + 1
@@ -48,21 +42,19 @@ export class MyPieChart {
         vis.arcGenerator = arc()
             .startAngle(d => d.x0)
             .endAngle(d => d.x1)
-            .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
-            .padRadius(vis.radius * 1.5)
             .innerRadius(d => d.y0 * vis.radius)
             .outerRadius(d => Math.max(d.y0 * vis.radius, d.y1 * vis.radius - 1));
 
         let r = hierarchy(vis.data)
             .sum((d) => d.value)
-            .sort((a, b) => b.value - a.value);
+            .sort((a, b) => a.value - b.value);
         vis.root = partition().size([2 * Math.PI, r.height + 1])(r);
         vis.root.each(d => (d.current = d));
 
         vis.svg = select(vis.config.parentElement)
             .append('svg')
             .attr('viewBox', [0, 0, vis.width, vis.width])
-            .style('font', '10px sans-serif');
+            .style('font', '16px sans-serif');
 
         vis.g = vis.svg.append('g')
             .attr('transform', `translate(${vis.width / 2},${vis.width / 2})`);
@@ -75,9 +67,7 @@ export class MyPieChart {
                 while (d.depth > 1) d = d.parent;
                 return vis.colorScale(d.data.name);
             })
-            .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
-            .attr('pointer-events', (d) => (vis.arcVisible(d.current) ? 'auto' : 'none'))
-
+            .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.8 : 0.6) : 0))
             .attr('d', (d) => vis.arcGenerator(d.current));
 
         vis.path.append('title').text(
@@ -89,17 +79,20 @@ export class MyPieChart {
                     .join('/')}\n${vis.formatter(d.value)}`,
         );
 
+        const truncate = (str, max) =>
+            str.length < max ?
+                str :
+                `${str.substr(0, str.substr(0, max).lastIndexOf(' '))}${'...'}`;
         vis.label = vis.g.append('g')
             .attr('pointer-events', 'none')
             .attr('text-anchor', 'middle')
-            .style('user-select', 'none')
             .selectAll('text')
             .data(vis.root.descendants().slice(1))
             .join('text')
-            .attr('dy', '0.35em')
             .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
             .attr('transform', (d) => vis.labelTransform(d.current))
-            .text((d) => d.data.name);
+            .text((d) => truncate(d.data.name, 13));
+
 
         vis.updateVis()
     }
@@ -107,10 +100,17 @@ export class MyPieChart {
     updateVis() {
         let vis = this;
 
+
+        vis.renderVis();
+    }
+
+    renderVis() {
+        let vis = this;
+
         vis.path.filter((d) => d.children)
             .style('cursor', 'pointer')
             .on('click', (event, p) => {
-                vis.parent.datum(p.parent || vis.root);
+                vis.parent.datum(p.parent);
 
                 vis.root.each(
                     (d) => (d.target = {
@@ -131,9 +131,7 @@ export class MyPieChart {
                     .filter(function (d) {
                         return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
                     })
-                    .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
-                    .attr('pointer-events', (d) => (vis.arcVisible(d.target) ? 'auto' : 'none'))
-
+                    .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.8 : 0.6) : 0))
                     .attrTween('d', (d) => () => vis.arcGenerator(d.current));
 
                 vis.label.filter(function (d) {
@@ -144,19 +142,13 @@ export class MyPieChart {
                     .attrTween('transform', (d) => () => vis.labelTransform(d.current));
             });
 
-        vis.renderVis();
-    }
-
-    renderVis() {
-        let vis = this;
-
         vis.parent = vis.g.append('circle')
             .datum(vis.root)
             .attr('r', vis.radius)
             .attr('fill', 'none')
             .attr('pointer-events', 'all')
             .on('click', (event, p) => {
-                vis.parent.datum(p.parent || vis.root);
+                vis.parent.datum(vis.root);
 
                 vis.root.each(
                     (d) => (d.target = {
@@ -177,9 +169,7 @@ export class MyPieChart {
                     .filter(function (d) {
                         return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
                     })
-                    .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
-                    .attr('pointer-events', (d) => (vis.arcVisible(d.target) ? 'auto' : 'none'))
-
+                    .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.8 : 0.6) : 0))
                     .attrTween('d', (d) => () => vis.arcGenerator(d.current));
 
                 vis.label.filter(function (d) {
@@ -192,11 +182,11 @@ export class MyPieChart {
     }
 
     arcVisible(d) {
-        return d.y1 <= 3 && d.y0 >= 1 && d.x1 > d.x0;
+        return (d.y1 <= 3) && (d.y0 >= 1) && (d.x1 > d.x0);
     }
 
     labelVisible(d) {
-        return d.y1 <= 3 && d.y0 >= 1 && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.03;
+        return (d.y1 <= 3) && (d.y0 >= 1) && ((d.y1 - d.y0) * (d.x1 - d.x0) > 0.03);
     }
 
     labelTransform(d) {
