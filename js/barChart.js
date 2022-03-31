@@ -270,6 +270,7 @@ function getTooltipContent(d) {
                 }</li>
                 <li>pecentage: ${Math.round(d.data[bracket] * 100) / 100}%</li>
                 <li>number of users: ${d.data.number_of_users}</li>
+                <li>farm size: ${areaBreakpointsLabelMap[bracket]}</li>
               </ul>
             `;
 }
