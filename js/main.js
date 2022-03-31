@@ -16,7 +16,7 @@ import {
   getFarmsByCertificationCertifier,
   getCertifierGroups,
 } from './utils';
-import { MyPieChart } from './myPiechart';
+import { PieChart } from './piechart';
 import produce from 'immer';
 import { Barchart } from './barChart';
 import { BubbleChart } from './bubbleChart';
@@ -117,9 +117,12 @@ Promise.all([
 
     states.geoMap.updateVis();
 
-    states.myPiechart = new MyPieChart({
-      parentElement: '#chart2',
-    }, getCountryCropGroupData());
+    states.piechart = new PieChart(
+      {
+        parentElement: '#chart2',
+      },
+      getCountryCropGroupData(),
+    );
 
     states.barChart = new Barchart({
       parentElement: '#chart1',
@@ -127,13 +130,11 @@ Promise.all([
     states.barChart.updateVis();
     // console.log(getCertifierGroups(Object.values(states.farms)))
     // bubbleChart();
-    apiChart()
-    states.bubbleChart = new BubbleChart(
-      {
-        parentElement: '#chart1',
-      },
-    );
-    states.bubbleChart.updateVis()
+    // apiChart()
+    states.bubbleChart = new BubbleChart({
+      parentElement: '#chart1',
+    });
+    states.bubbleChart.updateVis();
   })
   .catch((error) => console.error(error));
 
