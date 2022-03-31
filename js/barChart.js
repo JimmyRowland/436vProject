@@ -195,6 +195,10 @@ export class Barchart {
   updateVis() {
     let vis = this;
     filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(filteredStates.farms);
+    // FIXME: this is unnecessary when percentage is selected
+    filteredStates.farmPercentageByUserCountAreaBucket = getFarmPercentageByUserCountGroup(
+      filteredStates.farmsByUserCountAreaBucket,
+    );
     const buttonText = vis.buttonText.text();
     vis.data = buttonTextMap[buttonText].group(filteredStates.farmsByUserCountAreaBucket);
     vis.stackedData = d3.stack().keys([...areaAggregationBreakpoints].reverse())(vis.data);
@@ -268,7 +272,13 @@ function getTooltipContent(d) {
                 <li>number of farms: ${
                   filteredStates.farmsByUserCountAreaBucket[d.data.number_of_users][bracket].length
                 }</li>
-                <li>pecentage: ${Math.round(d.data[bracket] * 100) / 100}%</li>
+                <li>pecentage: ${
+                  Math.round(
+                    filteredStates.farmPercentageByUserCountAreaBucket[d.data.number_of_users][
+                      bracket
+                    ] * 100,
+                  ) / 100
+                }%</li>
                 <li>number of users: ${d.data.number_of_users}</li>
                 <li>farm size: ${areaBreakpointsLabelMap[bracket]}</li>
               </ul>
