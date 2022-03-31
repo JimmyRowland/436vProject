@@ -246,19 +246,6 @@ export class Barchart {
       .on('mouseleave', () => {
         d3.select('#tooltip').style('display', 'none');
       });
-    //
-    // // Tooltip event listeners
-    // bars
-    //   .on('mouseover', (event, d) => {
-    //
-    //   })
-    //
-    //   .on('mouseleave', () => {
-    //   })
-    //   .on('click', (event, d) => {
-    //     onGenderClick(d.gender)
-    //   })
-    // ;
 
     vis.xAxisG.transition().call(vis.xAxis);
 
