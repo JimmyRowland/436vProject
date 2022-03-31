@@ -17,6 +17,7 @@ import {
   getCertifierGroups,
 } from './utils';
 import { destroyPieChart, piechart } from './piechart';
+import { MyPieChart } from './myPiechart';
 import produce from 'immer';
 import { Barchart } from './barChart';
 import { BubbleChart } from './bubbleChart';
@@ -96,31 +97,34 @@ Promise.all([
     filteredStates.farmWithAreaByFarmId = produce({}, (_) =>
       getfarmWithAreaByFarmId(states.farms, states.locationsByFarmId),
     );
-    states.geoMap = new GeoMap(
-      {
-        parentElement: '#map',
-      },
-      data[0],
-      {
-        choropleth: {
-          choroplethDomain: farmNumberByCountryIdDomain,
-          choroplethData: farmNumberByCountryId,
-          zoom: farmNumberByCountryIdZoom,
-          center: farmNumberByCountryIdCenter,
-          data: { farmNumberByCountryId, areaByCountryId },
-        },
-        farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
-        // pieChart: getCountryCropGroupData()
-      },
-      { onCountryChange },
-    );
+    // states.geoMap = new GeoMap(
+    //   {
+    //     parentElement: '#map',
+    //   },
+    //   data[0],
+    //   {
+    //     choropleth: {
+    //       choroplethDomain: farmNumberByCountryIdDomain,
+    //       choroplethData: farmNumberByCountryId,
+    //       zoom: farmNumberByCountryIdZoom,
+    //       center: farmNumberByCountryIdCenter,
+    //       data: { farmNumberByCountryId, areaByCountryId },
+    //     },
+    //     farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
+    //     // pieChart: getCountryCropGroupData()
+    //   },
+    //   { onCountryChange },
+    // );
 
-    states.geoMap.updateVis();
+    // states.geoMap.updateVis();
     piechart(getCountryCropGroupData());
-    states.barChart = new Barchart({
+    states.myPiechart = new MyPieChart({
       parentElement: '#chart1',
-    });
-    states.barChart.updateVis();
+    }, getCountryCropGroupData());
+    // states.barChart = new Barchart({
+    //   parentElement: '#chart1',
+    // });
+    // states.barChart.updateVis();
     // console.log(getCertifierGroups(Object.values(states.farms)))
     bubbleChart();
     // apiChart()
