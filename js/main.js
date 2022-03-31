@@ -1,5 +1,5 @@
 import '../css/style.css';
-import * as d3 from 'd3';
+import { json, scaleOrdinal, extent, schemeSet1 } from 'd3';
 import { GeoMap } from './geoMap';
 import {
   farmNumberByCountryIdCenter,
@@ -17,7 +17,7 @@ import {
   getCertifierGroups,
   areaAggregationBreakpoints,
 } from './utils';
-import { destroyPieChart, piechart } from './piechart';
+import { PieChart } from './piechart';
 import produce from 'immer';
 import { Barchart } from './barChart';
 import { BubbleChart } from './bubbleChart';
@@ -73,21 +73,21 @@ export const filters = {
 export const filteredStates = {
   farms: {},
   farmWithAreaByFarmId: {},
-  //barchart
+  // barchart
   farmsByUserCountAreaBucket: {},
 };
 
 Promise.all([
-  d3.json('data/world_countries.json'),
+  json('data/world_countries.json'),
   // original source
   // d3.csv(
   //   'https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world_population.csv',
   // ),
 
-  d3.json(`data/farm.json`),
-  d3.json(`data/variety.json`),
-  d3.json(`data/crop.json`),
-  d3.json(`data/location.json`),
+  json(`data/farm.json`),
+  json(`data/variety.json`),
+  json(`data/crop.json`),
+  json(`data/location.json`),
   // db endpoints:
   // d3.json(`${URI}/visualization/farm`),
   // d3.json(`${URI}/visualization/variety`),
@@ -131,7 +131,14 @@ Promise.all([
     );
 
     states.geoMap.updateVis();
-    piechart(getCountryCropGroupData());
+
+    states.piechart = new PieChart(
+      {
+        parentElement: '#chart2',
+      },
+      getCountryCropGroupData(),
+    );
+
     states.barChart = new Barchart({
       parentElement: '#chart1',
     });
@@ -183,7 +190,7 @@ function fillCache(data) {
     locationTypes.add(location.type);
   }
   states.locationTypes = produce(states.locationTypes, (_) => Array.from(locationTypes));
-  states.locationColorScale = d3.scaleOrdinal().domain(states.locationTypes).range(d3.schemeSet1);
+  states.locationColorScale = scaleOrdinal().domain(states.locationTypes).range(schemeSet1);
   for (const country of data[0].features) {
     states.countryNameIdMap = produce(states.countryNameIdMap, (countryNameIdMap) => {
       countryNameIdMap[country.properties.name] = country.id;
@@ -232,9 +239,9 @@ function logStates(data) {
   console.log(new Set(data[1].map((farm) => farm.certifier)).size);
   console.log(new Set(data[1].map((farm) => farm.certification)).size);
   console.log(new Set(data[1].map((farm) => farm.country_name)).size);
-  console.log(d3.extent(data[1].map((farm) => farm.number_of_users)));
-  console.log(d3.extent(data[1].map((farm) => farm.grid_points.lat)));
-  console.log(d3.extent(data[1].map((farm) => farm.grid_points.lng)));
+  console.log(extent(data[1].map((farm) => farm.number_of_users)));
+  console.log(extent(data[1].map((farm) => farm.grid_points.lat)));
+  console.log(extent(data[1].map((farm) => farm.grid_points.lng)));
   console.log(new Set(data[2].map((variety) => variety.crop_id)).size);
   console.log(new Set(data[2].map((variety) => variety.crop_variety_name)).size);
 
@@ -242,5 +249,5 @@ function logStates(data) {
   console.log(new Set(data[2].map((variety) => variety.farm_id)).size);
   console.log(new Set(data[1].map((farm) => farm.farm_id)).size);
 
-  console.log(d3.extent(data[4].map((location) => location.total_area)));
+  console.log(extent(data[4].map((location) => location.total_area)));
 }
