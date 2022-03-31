@@ -117,14 +117,14 @@ Promise.all([
     // );
 
     // states.geoMap.updateVis();
-    piechart(getCountryCropGroupData());
+    // piechart(getCountryCropGroupData());
     states.myPiechart = new MyPieChart({
-      parentElement: '#chart1',
+      parentElement: '#chart2',
     }, getCountryCropGroupData());
-    // states.barChart = new Barchart({
-    //   parentElement: '#chart1',
-    // });
-    // states.barChart.updateVis();
+    states.barChart = new Barchart({
+      parentElement: '#chart1',
+    });
+    states.barChart.updateVis();
     // console.log(getCertifierGroups(Object.values(states.farms)))
     bubbleChart();
     // apiChart()

@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-let root
+let root, g;
 export class MyPieChart {
     /**
      * Class constructor with basic chart configuration
@@ -55,7 +55,7 @@ export class MyPieChart {
             .attr('viewBox', [0, 0, vis.width, vis.width])
             .style('font', '10px sans-serif');
 
-        vis.g = vis.svg.append('g')
+        g = vis.svg.append('g')
             .attr('transform', `translate(${vis.width / 2},${vis.width / 2})`);
 
         //     vis.updateVis()
@@ -67,7 +67,7 @@ export class MyPieChart {
         // renderVis() {
         //     let vis = this;
 
-        vis.path = vis.g.append('g')
+        vis.path = g.append('g')
             .selectAll('path')
             .data(root.descendants().slice(1))
             .join('path')
@@ -82,37 +82,7 @@ export class MyPieChart {
 
         vis.path.filter((d) => d.children)
             .style('cursor', 'pointer')
-            .on('click', vis.clicked);
-
-        vis.path.append('title').text(
-            (d) =>
-                `${d
-                    .ancestors()
-                    .map((d) => d.data.name)
-                    .reverse()
-                    .join('/')}\n${vis.formatter(d.value)}`,
-        );
-
-        vis.label = vis.g.append('g')
-            .attr('pointer-events', 'none')
-            .attr('text-anchor', 'middle')
-            .style('user-select', 'none')
-            .selectAll('text')
-            .data(root.descendants().slice(1))
-            .join('text')
-            .attr('dy', '0.35em')
-            .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
-            .attr('transform', (d) => vis.labelTransform(d.current))
-            .text((d) => d.data.name);
-
-        vis.parent = vis.g.append('circle')
-            .datum(root)
-            .attr('r', vis.radius)
-            .attr('fill', 'none')
-            .attr('pointer-events', 'all')
-            .on('click', (event, p) => {
-                console.log('clicked')
-    
+            .on('click', (event, p) => {    
                 vis.parent.datum(p.parent || root);
         
                 root.each(
@@ -140,7 +110,7 @@ export class MyPieChart {
                     .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
                     .attr('pointer-events', (d) => (vis.arcVisible(d.target) ? 'auto' : 'none'))
         
-                    .attrTween('d', (d) => () => arc(d.current));
+                    .attrTween('d', (d) => () => vis.arcGenerator(d.current));
         
                 vis.label.filter(function (d) {
                     return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
@@ -149,50 +119,71 @@ export class MyPieChart {
                     .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
                     .attrTween('transform', (d) => () => vis.labelTransform(d.current));
             });
-        // console.log(this);
-        // console.log(vis);
-        // function clicked(event, p) {
-        //     console.log('clicked')
 
-        //     vis.parent.datum(p.parent || root);
-    
-        //     root.each(
-        //         (d) => (d.target = {
-        //             x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-        //             x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-        //             y0: Math.max(0, d.y0 - p.depth),
-        //             y1: Math.max(0, d.y1 - p.depth),
-        //         }),
-        //     );
-    
-        //     const t = g.transition().duration(500);
-    
-        //     // Transition the data on all arcs, even the ones that aren’t visible,
-        //     // so that if this transition is interrupted, entering arcs will start
-        //     // the next transition from the desired position.
-        //     vis.path.transition(t)
-        //         .tween('data', (d) => {
-        //             const i = d3.interpolate(d.current, d.target);
-        //             return (t) => (d.current = i(t));
-        //         })
-        //         .filter(function (d) {
-        //             return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
-        //         })
-        //         .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
-        //         .attr('pointer-events', (d) => (vis.arcVisible(d.target) ? 'auto' : 'none'))
-    
-        //         .attrTween('d', (d) => () => arc(d.current));
-    
-        //     vis.label.filter(function (d) {
-        //         return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
-        //     })
-        //         .transition(t)
-        //         .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
-        //         .attrTween('transform', (d) => () => vis.labelTransform(d.current));
-        // }
+        vis.path.append('title').text(
+            (d) =>
+                `${d
+                    .ancestors()
+                    .map((d) => d.data.name)
+                    .reverse()
+                    .join('/')}\n${vis.formatter(d.value)}`,
+        );
+
+        vis.label = g.append('g')
+            .attr('pointer-events', 'none')
+            .attr('text-anchor', 'middle')
+            .style('user-select', 'none')
+            .selectAll('text')
+            .data(root.descendants().slice(1))
+            .join('text')
+            .attr('dy', '0.35em')
+            .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
+            .attr('transform', (d) => vis.labelTransform(d.current))
+            .text((d) => d.data.name);
+
+        vis.parent = g.append('circle')
+            .datum(root)
+            .attr('r', vis.radius)
+            .attr('fill', 'none')
+            .attr('pointer-events', 'all')
+            .on('click', (event, p) => {
+                vis.parent.datum(p.parent || root);
+        
+                root.each(
+                    (d) => (d.target = {
+                        x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+                        x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+                        y0: Math.max(0, d.y0 - p.depth),
+                        y1: Math.max(0, d.y1 - p.depth),
+                    }),
+                );
+        
+                const t = g.transition().duration(500);
+        
+                // Transition the data on all arcs, even the ones that aren’t visible,
+                // so that if this transition is interrupted, entering arcs will start
+                // the next transition from the desired position.
+                vis.path.transition(t)
+                    .tween('data', (d) => {
+                        const i = d3.interpolate(d.current, d.target);
+                        return (t) => (d.current = i(t));
+                    })
+                    .filter(function (d) {
+                        return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
+                    })
+                    .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
+                    .attr('pointer-events', (d) => (vis.arcVisible(d.target) ? 'auto' : 'none'))
+        
+                    .attrTween('d', (d) => () => vis.arcGenerator(d.current));
+        
+                vis.label.filter(function (d) {
+                    return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
+                })
+                    .transition(t)
+                    .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
+                    .attrTween('transform', (d) => () => vis.labelTransform(d.current));
+            });
     }
-
-    
 
     arcVisible(d) {
         return d.y1 <= 3 && d.y0 >= 1 && d.x1 > d.x0;
