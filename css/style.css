@@ -1,55 +1,28 @@
 body {
   margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
 }
-
-.container {
-  display: grid;
-  grid-template-columns: 0.7fr 2fr 2fr 0.7fr;
-  grid-template-rows: 0.3fr 1.1fr 1.5fr 4fr;
-  gap: 14px 22px;
-  grid-auto-flow: row;
-  grid-template-areas:
-    '. header header .'
-    '. map map .'
-    '. radialchart bubblechart .'
-    '. barchart barchart .';
-}
-
 .header {
-  grid-area: header;
+  position: absolute;
+  background-color: transparent;
+  width: 100%;
+  z-index: 2000;
+  animation-name: fading;
+  animation-duration: 20s;
+  opacity: 0;
+  pointer-events: none;
 }
-
-.map {
-  grid-area: map;
+@keyframes fading {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
-
-.barchart {
-  grid-area: barchart;
-}
-
-.radialchart {
-  grid-area: radialchart;
-}
-
-.bubblechart {
-  grid-area: bubblechart;
-}
-
-h1 {
-  text-align: center;
-}
-
-h2 {
-  text-align: center;
-  font-size: 16px;
-}
-h3 {
-  text-align: center;
-  font-size: 12px;
-  font-style: italic;
-}
-
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -100,39 +73,93 @@ h3 {
   z-index: 1000;
 }
 
-/*
+:root {
+  --bottom-row-height: min(45vh, 400px);
+  --chart-container-height: calc(var(--bottom-row-height) - 48px);
+  --expanded-width: 100vh;
+}
+
 .chart-container {
   display: flex;
   flex-direction: row;
   column-gap: 24px;
-  height: 400px;
+  height: var(--bottom-row-height);
   padding: 24px;
   z-index: 2000;
+  justify-content: space-evenly;
 }
 #chart1 {
-  width: 50%;
+  flex-grow: 1;
+  max-width: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.expandable-certification-container {
+  width: var(--chart-container-height);
+  display: flex;
+  justify-content: center;
+  align-items: start;
+}
+.expandable-crop-container {
+  width: var(--chart-container-height);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.axis-title {
+  font-size: 12px;
 }
 #chart2 {
-  width: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
+  height: 100%;
 }
+#chart3 {
+  width: 100%;
+  height: 100%;
+}
+
 #chart2:hover {
-  width: 90vh;
-  height: 90vh;
+  width: var(--expanded-width);
+  height: var(--expanded-width);
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding-left: 12px;
+}
+#chart3:hover {
+  width: var(--expanded-width);
+  height: var(--expanded-width);
   position: absolute;
   right: 0;
   bottom: 0;
 }
-*/
-.axis-title {
-  font-size: 12px;
+.expandable-chart:hover svg {
+  margin: 12px;
 }
-
+.expandable-chart:hover {
+  background-color: #eee;
+  border: solid 1px #999;
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
+}
+.expandable-chart:hover h4 {
+  display: none;
+}
+.certification-title {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  transform: translateY(-40px);
+}
+.crop-title {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  z-index: -1;
+  transform: translateY(-24px);
+}
 .clickable {
   cursor: pointer;
 }

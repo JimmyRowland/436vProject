@@ -48,7 +48,7 @@ export function bubbleChart() {
   }
 
   const svg = d3
-    .select('#chart3')
+    .select('#chart2')
     .append('svg')
     .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
     .style('display', 'block')

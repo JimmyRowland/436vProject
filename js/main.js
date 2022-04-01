@@ -134,7 +134,7 @@ Promise.all([
 
     states.piechart = new PieChart(
       {
-        parentElement: '#chart2',
+        parentElement: '#chart3',
       },
       getCountryCropGroupData(),
     );
