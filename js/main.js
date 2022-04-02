@@ -40,6 +40,7 @@ if (import.meta.env.VITE_API_URL?.length) {
 export const states = {
   farms: {},
   countryNameIdMap: {},
+  farmsByCountryName: {},
   crops: {},
   locations: {},
   cropVarietiesByFarmId: {},
@@ -68,10 +69,14 @@ export const filters = {
     }, {}),
     userCount: {},
   },
+  geoMap: {
+    selectedFarmIdSet: new Set(),
+  },
 };
 
 export const filteredStates = {
   farms: {},
+  farmIdSet: new Set(),
   farmWithAreaByFarmId: {},
   // barchart
   farmsByUserCountAreaBucket: {},
@@ -104,13 +109,6 @@ Promise.all([
     );
     updateFilteredStates();
 
-    const farmNumberByCountryId = getFarmNumberByCountryId(states.farms, states.countryNameIdMap);
-    const areaByCountryId = getTotalAreaByCountryId(
-      states.farms,
-      states.countryNameIdMap,
-      states.locationsByFarmId,
-    );
-
     states.geoMap = new GeoMap(
       {
         parentElement: '#map',
@@ -118,11 +116,8 @@ Promise.all([
       data[0],
       {
         choropleth: {
-          choroplethDomain: farmNumberByCountryIdDomain,
-          choroplethData: farmNumberByCountryId,
           zoom: farmNumberByCountryIdZoom,
           center: farmNumberByCountryIdCenter,
-          data: { farmNumberByCountryId, areaByCountryId },
         },
         farmWithAreaByFarmId: filteredStates.farmWithAreaByFarmId,
         // pieChart: getCountryCropGroupData()
@@ -176,6 +171,10 @@ function fillCache(data) {
       farms[farm.farm_id] = farm;
     });
     filters.barchart.userCount[farm.number_of_users] = true;
+    states.farmsByCountryName = produce(states.farmsByCountryName, (farmsByCountryName) => {
+      farmsByCountryName[farm.country_name] = farmsByCountryName[farm.country_name] || [];
+      farmsByCountryName[farm.country_name].push(farm);
+    });
   }
 
   const locationTypes = new Set();
@@ -228,11 +227,25 @@ function updateFilteredStates() {
       return filters.barchart.area[areaBucket] && filters.barchart.userCount[farm.number_of_users];
     }),
   );
+  filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
+    let hasSelectedFarm = false;
+    const selectedFarms = farms.filter(({ farm_id }) => {
+      if (filters.geoMap.selectedFarmIdSet.has(farm_id)) {
+        hasSelectedFarm = true;
+        return true;
+      } else {
+        return false;
+      }
+    });
+    return hasSelectedFarm ? selectedFarms : farms;
+  });
+  filteredStates.farmIdSet = new Set(filteredStates.farms.map((farm) => farm.farm_id));
 }
 
 export function updateCharts() {
   updateFilteredStates();
   states.barChart.updateVis();
+  states.geoMap.updateVis();
 }
 
 function logStates(data) {

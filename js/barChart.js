@@ -3,6 +3,7 @@ import { filteredStates, filters, states, updateCharts } from './main';
 import {
   areaAggregationBreakpoints,
   areaBreakpointsLabelMap,
+  areaColorScale,
   getFarmCountByUserCountGroup,
   getFarmPercentageByUserCountAreaBucket,
   getFarmPercentageByUserCountGroup,
@@ -59,7 +60,6 @@ export class Barchart {
       .range([12, vis.width - 12])
       .paddingInner(0.2);
 
-    vis.colorScale = d3.scaleOrdinal().domain(areaAggregationBreakpoints).range(d3.schemeSet3);
     // Define size of SVG drawing area
     vis.svg = d3
       .select(vis.config.parentElement)
@@ -132,7 +132,7 @@ export class Barchart {
         .append('rect')
         .attr('width', 16)
         .attr('height', 16)
-        .attr('fill', vis.colorScale(breakpoint));
+        .attr('fill', areaColorScale(breakpoint));
 
       label.append('text').text(areaBreakpointsLabelMap[breakpoint]).attr('x', 24).attr('y', 12);
     }
@@ -195,7 +195,9 @@ export class Barchart {
    */
   updateVis() {
     let vis = this;
-    filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(filteredStates.farms);
+    filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(
+      filteredStates.selectedFarms,
+    );
     // FIXME: this is unnecessary when percentage is selected
     filteredStates.farmPercentageByUserCountAreaBucket = getFarmPercentageByUserCountAreaBucket(
       filteredStates.farmsByUserCountAreaBucket,
@@ -227,7 +229,7 @@ export class Barchart {
       .data(vis.stackedData)
       .join('g')
       .attr('class', 'bar')
-      .attr('fill', (d) => vis.colorScale(d.key))
+      .attr('fill', (d) => areaColorScale(d.key))
       .selectAll('rect')
       .data((d) => d)
       .join('rect')
@@ -246,7 +248,7 @@ export class Barchart {
           .style('display', 'block')
           .style('left', event.pageX + vis.config.tooltipPadding + 'px')
           .style('top', event.pageY - 2 * vis.config.tooltipPadding + 'px')
-          .html(getTooltipContent(d));
+          .html(getFarmCountTooltipContent(d));
       })
       .on('mouseleave', () => {
         d3.select('#tooltip').style('display', 'none');
@@ -258,7 +260,7 @@ export class Barchart {
   }
 }
 
-function getTooltipContent(d) {
+function getFarmCountTooltipContent(d) {
   let sum = d[1];
   const bracket = Object.keys(d.data)
     .sort()
