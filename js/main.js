@@ -1,21 +1,11 @@
 import '../css/style.css';
-import { json, scaleOrdinal, extent, schemeSet1 } from 'd3';
+import { extent, json, scaleOrdinal, schemeSet1 } from 'd3';
 import { GeoMap } from './geoMap';
 import {
-  farmNumberByCountryIdCenter,
-  farmNumberByCountryIdDomain,
-  farmNumberByCountryIdZoom,
-  getCropGroups,
-  getfarmWithAreaByFarmId,
-  getFarmNumberByCountryId,
-  getFarmsByUserCount,
-  getFarmsCountryIdMap,
-  getTotalAreaByCountryId,
-  getFarmsByUserCountAreaBucket,
-  getFarmPercentageByUserCountGroup,
-  getFarmsByCertificationCertifier,
-  getCertifierGroups,
   areaAggregationBreakpoints,
+  farmNumberByCountryIdCenter,
+  farmNumberByCountryIdZoom,
+  getfarmWithAreaByFarmId,
 } from './utils';
 import { PieChart } from './piechart';
 import produce from 'immer';
@@ -45,6 +35,8 @@ export const states = {
   cropVarietiesByFarmId: {},
   cropVarietiesByCropId: {},
   locationsByFarmId: {},
+  farmIdSetByCropId: {},
+  farmIdSetByCropGroup: {},
   locationTypes: [],
   locationColorScale: undefined,
   country_id: undefined,
@@ -74,6 +66,10 @@ export const filters = {
   bubbleChart: {
     certification: undefined,
     certifier: undefined,
+  },
+  pieChart: {
+    crop_group: undefined,
+    crop_id: undefined,
   },
 };
 
@@ -130,12 +126,9 @@ Promise.all([
 
     states.geoMap.updateVis();
 
-    states.piechart = new PieChart(
-      {
-        parentElement: '#chart3',
-      },
-      getCountryCropGroupData(),
-    );
+    states.piechart = new PieChart({
+      parentElement: '#chart3',
+    });
 
     states.barChart = new Barchart({
       parentElement: '#chart1',
@@ -149,24 +142,6 @@ Promise.all([
   .catch((error) => console.error(error));
 
 function fillCache(data) {
-  for (const cropVariety of data[2]) {
-    states.cropVarietiesByFarmId = produce(
-      states.cropVarietiesByFarmId,
-      (cropVarietiesByFarmId) => {
-        cropVarietiesByFarmId[cropVariety.farm_id] =
-          cropVarietiesByFarmId[cropVariety.farm_id] || [];
-        cropVarietiesByFarmId[cropVariety.farm_id].push(cropVariety);
-      },
-    );
-    states.cropVarietiesByCropId = produce(
-      states.cropVarietiesByCropId,
-      (cropVarietiesByCropId) => {
-        cropVarietiesByCropId[cropVariety.crop_id] =
-          cropVarietiesByCropId[cropVariety.crop_id] || [];
-        cropVarietiesByCropId[cropVariety.crop_id].push(cropVariety);
-      },
-    );
-  }
   for (const crop of data[3]) {
     states.crops = produce(states.crops, (crops) => {
       crops[crop.crop_id] = crop;
@@ -201,20 +176,35 @@ function fillCache(data) {
       countryNameIdMap[country.properties.name] = country.id;
     });
   }
+  for (const cropVariety of data[2]) {
+    states.cropVarietiesByFarmId = produce(
+      states.cropVarietiesByFarmId,
+      (cropVarietiesByFarmId) => {
+        cropVarietiesByFarmId[cropVariety.farm_id] =
+          cropVarietiesByFarmId[cropVariety.farm_id] || [];
+        cropVarietiesByFarmId[cropVariety.farm_id].push(cropVariety);
+      },
+    );
+    states.cropVarietiesByCropId = produce(
+      states.cropVarietiesByCropId,
+      (cropVarietiesByCropId) => {
+        cropVarietiesByCropId[cropVariety.crop_id] =
+          cropVarietiesByCropId[cropVariety.crop_id] || [];
+        cropVarietiesByCropId[cropVariety.crop_id].push(cropVariety);
+      },
+    );
+    const crop_group = states.crops[cropVariety.crop_id].crop_group;
+    states.farmIdSetByCropGroup[crop_group] = states.farmIdSetByCropGroup[crop_group] || new Set();
+    states.farmIdSetByCropGroup[crop_group].add(cropVariety.farm_id);
+    states.farmIdSetByCropId[cropVariety.crop_id] =
+      states.farmIdSetByCropId[cropVariety.crop_id] || new Set();
+    states.farmIdSetByCropId[cropVariety.crop_id].add(cropVariety.farm_id);
+  }
 }
 
 function onCountryChange(country_id) {
   states.country_id = country_id;
   states.geoMap.updateCountry(country_id);
-}
-
-function getCountryCropGroupData() {
-  const farmsByCountryId = getFarmsCountryIdMap(states.farms, states.countryNameIdMap);
-  const children = Object.entries(farmsByCountryId).map(([country_id, farms]) => ({
-    name: farms[0].country_name,
-    children: getCropGroups(farms),
-  }));
-  return { name: 'crop_group', children: getCropGroups(Object.values(states.farms)) };
 }
 
 function fillChartDivWidth() {
@@ -235,7 +225,11 @@ export function updateFilteredStates() {
         filters.barchart.userCount[farm.number_of_users] &&
         (!filters.bubbleChart.certification ||
           filters.bubbleChart.certification === farm.certification) &&
-        (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier)
+        (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier) &&
+        (!filters.pieChart.crop_id ||
+          states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
+        (!filters.pieChart.crop_group ||
+          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id))
       );
     }),
   );
@@ -260,7 +254,10 @@ export function updateCharts() {
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();
-  states.bubbleChart.updateVis();
+  setTimeout(() => {
+    states.bubbleChart.updateVis();
+    states.piechart.updateVis();
+  }, 500);
 }
 
 function logStates(data) {

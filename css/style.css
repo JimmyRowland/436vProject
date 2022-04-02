@@ -147,19 +147,22 @@ body {
 .expandable-chart:hover h4 {
   display: none;
 }
-.certification-title {
+
+#certification-title {
   position: absolute;
   width: 100%;
   text-align: center;
   transform: translateY(-40px);
 }
-.crop-title {
+
+#crop-title {
   position: absolute;
   width: 100%;
   text-align: center;
   z-index: -1;
   transform: translateY(-24px);
 }
+
 .clickable {
   cursor: pointer;
 }

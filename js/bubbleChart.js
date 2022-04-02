@@ -1,13 +1,10 @@
 import * as d3 from 'd3';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
-import {
-  areaAggregationBreakpoints,
-  getCertifierGroups,
-  getFarmPercentageByUserCountGroup,
-  getFarmsByUserCountAreaBucket,
-} from './utils';
+import { getCertifierGroups } from './utils';
+
 const height = 927;
 const width = 927;
+
 export class BubbleChart {
   /**
    * Class constructor with basic chart configuration
@@ -71,6 +68,7 @@ export class BubbleChart {
    */
   renderVis() {
     const vis = this;
+    setTitleName();
 
     vis.svg.on('click', () => zoom(vis.root));
     const node = vis.chart
@@ -150,12 +148,17 @@ export class BubbleChart {
         .on('end', function (d) {
           if (d.parent !== vis.focus) this.style.display = 'none';
         });
-
+      setTitleName(d.data.name);
       if (d.depth < 3) {
         updateFilteredStates();
         states.barChart.updateVis();
         states.geoMap.updateVis();
+        setTimeout(() => states.piechart.updateVis(), 1000);
       }
     }
   }
+}
+
+function setTitleName(name = 'certification') {
+  document.getElementById('certification-title').innerText = name;
 }

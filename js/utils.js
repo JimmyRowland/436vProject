@@ -80,6 +80,7 @@ export function getCropGroups(farms) {
         cropsByCropGroup[crop.crop_group][crop.crop_id] = cropsByCropGroup[crop.crop_group][
           crop.crop_id
         ] || {
+          crop_id: crop.crop_id,
           name: crop.crop_common_name,
           children: [],
         };
@@ -96,6 +97,10 @@ export function getCropGroups(farms) {
       children: Object.values(crops).map((crop) => crop),
     })) || []
   );
+}
+
+export function getCropGroupData(farms) {
+  return { name: 'crop_group', children: getCropGroups(farms) };
 }
 
 //Percent stacked bar chart

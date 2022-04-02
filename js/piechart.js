@@ -1,6 +1,5 @@
 import {
   arc,
-  format,
   hierarchy,
   interpolate,
   interpolateRainbow,
@@ -9,6 +8,8 @@ import {
   scaleOrdinal,
   select,
 } from 'd3';
+import { getCropGroupData } from './utils';
+import { filteredStates, filters, states, updateFilteredStates } from './main';
 
 export class PieChart {
   /**
@@ -16,13 +17,12 @@ export class PieChart {
    * @param {Object}
    * @param {Array}
    */
-  constructor(_config, _data) {
+  constructor(_config) {
     this.config = {
       parentElement: _config.parentElement,
-      containerWidth: _config.containerWidth || 840,
+      containerWidth: _config.containerWidth || 932,
       margin: _config.margin || { top: 20, right: 20, bottom: 20, left: 20 },
     };
-    this.data = _data;
     this.initVis();
   }
 
@@ -31,32 +31,100 @@ export class PieChart {
 
     vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
 
-    vis.colorScale = scaleOrdinal(quantize(interpolateRainbow, vis.data.children.length + 1));
-
-    vis.formatter = format(',d');
-
     vis.radius = vis.width / 6;
+
     vis.arcGenerator = arc()
       .startAngle((d) => d.x0)
       .endAngle((d) => d.x1)
+      .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.005))
+      .padRadius(vis.radius * 1.5)
       .innerRadius((d) => d.y0 * vis.radius)
       .outerRadius((d) => Math.max(d.y0 * vis.radius, d.y1 * vis.radius - 1));
-
-    let r = hierarchy(vis.data)
-      .sum((d) => d.value)
-      .sort((a, b) => a.value - b.value);
-    vis.root = partition().size([2 * Math.PI, r.height + 1])(r);
-    vis.root.each((d) => (d.current = d));
 
     vis.svg = select(vis.config.parentElement)
       .append('svg')
       .attr('viewBox', [0, 0, vis.width, vis.width])
-      .style('font', '16px sans-serif');
+      .style('font', '9px sans-serif');
 
-    vis.g = vis.svg.append('g').attr('transform', `translate(${vis.width / 2},${vis.width / 2})`);
-
-    vis.path = vis.g
+    vis.chart = vis.svg
       .append('g')
+      .attr('transform', `translate(${vis.width / 2},${vis.width / 2})`);
+    vis.pathG = vis.chart.append('g');
+
+    vis.labelG = vis.chart.append('g').attr('pointer-events', 'none').attr('text-anchor', 'middle');
+    vis.data = getCropGroupData(filteredStates.farms);
+    vis.colorScale = scaleOrdinal(quantize(interpolateRainbow, vis.data.children.length + 1));
+
+    vis.parent = vis.chart
+      .append('circle')
+      .datum(vis.root)
+      .attr('r', vis.radius)
+      .attr('fill', 'none')
+      .attr('pointer-events', 'all')
+      .on('click', (event, p) => {
+        vis.parent.datum(vis.root);
+        vis.root.each(
+          (d) =>
+            (d.target = {
+              x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+              x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+              y0: Math.max(0, d.y0 - p.depth),
+              y1: Math.max(0, d.y1 - p.depth),
+            }),
+        );
+
+        const t = vis.chart.transition().duration(500);
+
+        vis.path
+          .transition(t)
+          .tween('data', (d) => {
+            const i = interpolate(d.current, d.target);
+            return (t) => (d.current = i(t));
+          })
+          .filter(function (d) {
+            return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
+          })
+          .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
+          .attrTween('d', (d) => () => vis.arcGenerator(d.current));
+
+        vis.label
+          .filter(function (d) {
+            return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
+          })
+          .transition(t)
+          .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
+          .attrTween('transform', (d) => () => vis.labelTransform(d.current));
+
+        if (p.depth === 0) {
+          filters.pieChart.crop_group = undefined;
+          filters.pieChart.crop_id = undefined;
+          setTitleName();
+          onFilter();
+        } else if (p.depth === 1) {
+          filters.pieChart.crop_id = undefined;
+          setTitleName();
+          onFilter();
+        }
+      });
+    vis.updateVis();
+  }
+
+  updateVis() {
+    let vis = this;
+    vis.data = getCropGroupData(filteredStates.selectedFarms);
+    const root = hierarchy(vis.data)
+      .sum((d) => d.value)
+      .sort((a, b) => b.value - a.value);
+    vis.root = partition().size([2 * Math.PI, root.height + 1])(root);
+    vis.root.each((d) => (d.current = d));
+    vis.renderVis();
+  }
+
+  renderVis() {
+    let vis = this;
+    setTitleName();
+
+    vis.path = vis.pathG
       .selectAll('path')
       .data(vis.root.descendants().slice(1))
       .join('path')
@@ -64,47 +132,14 @@ export class PieChart {
         while (d.depth > 1) d = d.parent;
         return vis.colorScale(d.data.name);
       })
-      .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.8 : 0.6) : 0))
+      .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current));
-
-    vis.path.append('title').text(
-      (d) =>
-        `${d
-          .ancestors()
-          .map((d) => d.data.name)
-          .reverse()
-          .join('/')}\n${vis.formatter(d.value)}`,
-    );
-
-    const truncate = (str, max) =>
-      str.length < max ? str : `${str.substr(0, str.substr(0, max).lastIndexOf(' '))}${'...'}`;
-    vis.label = vis.g
-      .append('g')
-      .attr('pointer-events', 'none')
-      .attr('text-anchor', 'middle')
-      .selectAll('text')
-      .data(vis.root.descendants().slice(1))
-      .join('text')
-      .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
-      .attr('transform', (d) => vis.labelTransform(d.current))
-      .text((d) => truncate(d.data.name, 13));
-
-    vis.updateVis();
-  }
-
-  updateVis() {
-    let vis = this;
-
-    vis.renderVis();
-  }
-
-  renderVis() {
-    let vis = this;
 
     vis.path
       .filter((d) => d.children)
       .style('cursor', 'pointer')
       .on('click', (event, p) => {
+        if (p.depth === 3) return;
         vis.parent.datum(p.parent);
 
         vis.root.each(
@@ -117,7 +152,7 @@ export class PieChart {
             }),
         );
 
-        const t = vis.g.transition().duration(500);
+        const t = vis.chart.transition().duration(500);
 
         vis.path
           .transition(t)
@@ -128,7 +163,7 @@ export class PieChart {
           .filter(function (d) {
             return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
           })
-          .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.8 : 0.6) : 0))
+          .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
           .attrTween('d', (d) => () => vis.arcGenerator(d.current));
 
         vis.label
@@ -138,49 +173,27 @@ export class PieChart {
           .transition(t)
           .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
           .attrTween('transform', (d) => () => vis.labelTransform(d.current));
+        if (p.depth === 1) {
+          filters.pieChart.crop_group = p.data.name;
+          filters.pieChart.crop_id = undefined;
+          setTitleName(p.data.name);
+          onFilter();
+        } else if (p.depth === 2) {
+          filters.pieChart.crop_id = p.data.crop_id;
+          setTitleName(p.data.name);
+          onFilter();
+        }
       });
 
-    vis.parent = vis.g
-      .append('circle')
-      .datum(vis.root)
-      .attr('r', vis.radius)
-      .attr('fill', 'none')
-      .attr('pointer-events', 'all')
-      .on('click', (event, p) => {
-        vis.parent.datum(vis.root);
-
-        vis.root.each(
-          (d) =>
-            (d.target = {
-              x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-              x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-              y0: Math.max(0, d.y0 - p.depth),
-              y1: Math.max(0, d.y1 - p.depth),
-            }),
-        );
-
-        const t = vis.g.transition().duration(500);
-
-        vis.path
-          .transition(t)
-          .tween('data', (d) => {
-            const i = interpolate(d.current, d.target);
-            return (t) => (d.current = i(t));
-          })
-          .filter(function (d) {
-            return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
-          })
-          .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.8 : 0.6) : 0))
-          .attrTween('d', (d) => () => vis.arcGenerator(d.current));
-
-        vis.label
-          .filter(function (d) {
-            return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
-          })
-          .transition(t)
-          .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
-          .attrTween('transform', (d) => () => vis.labelTransform(d.current));
-      });
+    const truncate = (str, max) =>
+      str.length < max ? str : `${str.substr(0, str.substr(0, max).lastIndexOf(' '))}${'...'}`;
+    vis.label = vis.labelG
+      .selectAll('text')
+      .data(vis.root.descendants().slice(1))
+      .join('text')
+      .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
+      .attr('transform', (d) => vis.labelTransform(d.current))
+      .text((d) => truncate(d.data.name, 36));
   }
 
   arcVisible(d) {
@@ -197,4 +210,17 @@ export class PieChart {
     const y = ((d.y0 + d.y1) / 2) * vis.radius;
     return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
   }
+}
+
+function onFilter() {
+  updateFilteredStates();
+  states.barChart.updateVis();
+  states.geoMap.updateVis();
+  setTimeout(() => {
+    states.bubbleChart.updateVis();
+  }, 1000);
+}
+
+export function setTitleName(name = 'crop') {
+  document.getElementById('crop-title').innerText = name;
 }
