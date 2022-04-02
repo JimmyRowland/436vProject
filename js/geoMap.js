@@ -69,7 +69,14 @@ export class GeoMap {
     const vis = this;
     vis.map = L.map('map');
     vis.map.setView(this.choropleth.center, this.choropleth.zoom);
-
+    vis.map.removeEventListener();
+    vis.map.on({
+      dblclick: (e) => {
+        vis.map.setView(this.choropleth.center, this.choropleth.zoom);
+        filters.geoMap.selectedFarmIdSet.clear();
+        updateCharts();
+      },
+    });
     L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>',
     }).addTo(vis.map);
@@ -176,7 +183,7 @@ export class GeoMap {
           // e.target.bringToBack()
         },
         click: (e) => {
-          const farms = states.farmsByCountryName[layer.feature.properties.name];
+          const farms = states.farmsByCountryName[layer.feature.properties.name] || [];
           const farmsToSelect = [];
           const farmsToDeselect = [];
           for (const farm of farms) {

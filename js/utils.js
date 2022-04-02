@@ -58,7 +58,7 @@ export const getfarmWithAreaByFarmId = (farms, locationsByFarmId) => {
 };
 
 export const farmNumberByCountryIdDomain = [1, 5, 10, 50, 100];
-export const farmNumberByCountryIdCenter = [0, -80];
+export const farmNumberByCountryIdCenter = [0, 10.444547];
 export const farmNumberByCountryIdZoom = 3;
 
 export const getPopulationById = (countries) =>
