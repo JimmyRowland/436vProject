@@ -1,11 +1,13 @@
 import * as d3 from 'd3';
-import { filteredStates, states } from './main';
+import { filteredStates, filters, states, updateFilteredStates } from './main';
 import {
   areaAggregationBreakpoints,
+  getCertifierGroups,
   getFarmPercentageByUserCountGroup,
   getFarmsByUserCountAreaBucket,
 } from './utils';
-
+const height = 927;
+const width = 927;
 export class BubbleChart {
   /**
    * Class constructor with basic chart configuration
@@ -16,14 +18,7 @@ export class BubbleChart {
     // Configuration object with defaults
     this.config = {
       parentElement: _config.parentElement,
-      containerWidth: _config.containerWidth || states.chart1.width,
-      containerHeight: _config.containerHeight || states.chart1.height,
-      margin: _config.margin || { top: 0, right: 0, bottom: 0, left: 0 },
-      reverseOrder: _config.reverseOrder || false,
-      tooltipPadding: _config.tooltipPadding || 15,
     };
-    this.state = _state;
-
     this.initVis();
   }
 
@@ -31,81 +26,43 @@ export class BubbleChart {
    * Initialize scales/axes and append static elements, such as axis titles
    */
   initVis() {
-    let vis = this;
+    const vis = this;
+    vis.colorScale = d3.scaleOrdinal().range(d3.schemeCategory10);
 
-    // Calculate inner chart size. Margin specifies the space around the actual chart.
-    vis.width = vis.config.containerWidth - vis.config.margin.left - vis.config.margin.right;
-    vis.height = vis.config.containerHeight - vis.config.margin.top - vis.config.margin.bottom;
-
-    // Initialize scales and axes
-    // Important: we flip array elements in the y output range to position the rectangles correctly
-    vis.yScale = d3.scaleLinear().range([vis.height, 0]);
-
-    vis.xScale = d3
-      .scaleBand()
-      .range([12, vis.width - 12])
-      .paddingInner(0.2);
-
-    vis.colorScale = d3.scaleOrdinal().domain(areaAggregationBreakpoints).range(d3.schemeSet3);
-    // Define size of SVG drawing area
     vis.svg = d3
       .select(vis.config.parentElement)
       .append('svg')
-      .attr('width', vis.config.containerWidth)
-      .attr('height', vis.config.containerHeight);
+      .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
+      .style('display', 'block')
+      .style('margin', '0 -14px')
+      .style('cursor', 'pointer');
 
-    // SVG Group containing the actual chart; D3 margin convention
-    vis.chart = vis.svg
+    vis.chart = vis.svg.append('g');
+
+    vis.label = vis.svg
       .append('g')
-      .attr('transform', `translate(${vis.config.margin.left},${vis.config.margin.top})`);
-
-    // Append empty x-axis group and move it to the bottom of the chart
-    vis.xAxisG = vis.chart
-      .append('g')
-      .attr('class', 'axis x-axis')
-      .attr('transform', `translate(0,${vis.height})`);
-
-    // Append y-axis group
-    vis.yAxisG = vis.chart.append('g').attr('class', 'axis y-axis');
-
-    vis.chart
-      .append('text')
-      .attr('class', 'axis-title')
-      .attr('y', vis.height + 24)
-      .attr('x', vis.width + 4)
-      .attr('dy', '.71em')
-      .style('text-anchor', 'end')
-      .text('members/farm');
-
-    vis.svg
-      .append('text')
-      .attr('class', 'axis-title')
-      .attr('x', 5)
-      .attr('y', 0)
-      .attr('dy', 20)
-      .text('farms');
+      .style('font-family', 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif')
+      .attr('pointer-events', 'none')
+      .attr('text-anchor', 'middle');
   }
 
   /**
    * Prepare data and scales before we render it
    */
   updateVis() {
-    let vis = this;
-    filteredStates.farmsByUserCountAreaBucket = getFarmsByUserCountAreaBucket(
-      Object.values(filteredStates.farmWithAreaByFarmId),
+    const vis = this;
+    const certificationGroup = getCertifierGroups(filteredStates.selectedFarms);
+
+    vis.root = d3
+      .pack()
+      .size([width - 300, height])
+      .padding(7)(
+      d3
+        .hierarchy(certificationGroup)
+        .sum((d) => d.value)
+        .sort((a, b) => b.value - a.value),
     );
-    vis.data = getFarmPercentageByUserCountGroup(filteredStates.farmsByUserCountAreaBucket);
-    vis.stackedData = d3.stack().keys(areaAggregationBreakpoints.reverse())(vis.data);
-    vis.xScale.domain(Object.keys(filteredStates.farmsByUserCountAreaBucket).sort());
-    vis.yScale.domain([0, 100]);
-    vis.yAxis = d3
-      .axisLeft(vis.yScale)
-      .tickSize(-vis.width)
-      .tickPadding(10)
-      .ticks(5)
-      .tickSizeOuter(0)
-      .tickFormat((d) => d + '%');
-    vis.xAxis = d3.axisBottom(vis.xScale).tickSizeOuter(0);
+    vis.focus = vis.root;
     vis.renderVis();
   }
 
@@ -113,37 +70,92 @@ export class BubbleChart {
    * Bind data to visual elements
    */
   renderVis() {
-    let vis = this;
-    let bars = vis.chart
-      .selectAll('.bar')
-      .data(vis.stackedData)
-      .join('g')
-      .attr('fill', (d) => vis.colorScale(d.key))
-      .selectAll('rect')
-      .data((d) => d)
-      .join('rect')
-      .style('opacity', 1)
-      .attr('class', (d) => `bar${d.gender === states.gender ? ' bar-selected' : ''}`)
-      .attr('x', (d) => vis.xScale(d.data.number_of_users))
-      .attr('width', vis.xScale.bandwidth())
-      .attr('height', (d) => vis.yScale(d[0]) - vis.yScale(d[1]))
-      .attr('y', (d) => vis.yScale(d[1]));
-    //
-    // // Tooltip event listeners
-    // bars
-    //   .on('mouseover', (event, d) => {
-    //
-    //   })
-    //
-    //   .on('mouseleave', () => {
-    //   })
-    //   .on('click', (event, d) => {
-    //     onGenderClick(d.gender)
-    //   })
-    // ;
+    const vis = this;
 
-    vis.xAxisG.call(vis.xAxis);
+    vis.svg.on('click', () => zoom(vis.root));
+    const node = vis.chart
+      .selectAll('circle')
+      .data(vis.root.descendants().slice(1))
+      .join('circle')
+      .attr('fill', setCircleColor)
+      .attr('pointer-events', (d) => (!d.children ? 'none' : null))
+      .attr('opacity', (d) => (d.height === 0 ? 0.3 : 1))
+      .on('mouseover', function () {
+        d3.select(this).attr('stroke', '#000');
+      })
+      .on('mouseout', function () {
+        d3.select(this).attr('stroke', null);
+      })
+      .on('click', (event, d) => vis.focus !== d && (zoom(d), event.stopPropagation()));
+    const label = vis.label
+      .selectAll('text')
+      .data(vis.root.descendants())
+      .join('text')
+      .style('fill-opacity', (d) => (d.parent === vis.root ? 1 : 0))
+      .style('display', (d) => (d.parent === vis.root ? 'inline' : 'none'))
+      .text((d) => d.data.name);
 
-    vis.yAxisG.call(vis.yAxis);
+    function setCircleColor(obj) {
+      if (obj.height === 0) {
+        return states.locationColorScale(obj.data.name);
+      }
+      let depth = obj.depth;
+      while (obj.depth > 1) {
+        obj = obj.parent;
+      }
+      let newcolor = d3.hsl(vis.colorScale(obj.data.name));
+      newcolor.l += depth == 1 ? 0 : depth * 0.1;
+      return newcolor;
+    }
+    zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
+
+    function zoomTo(v) {
+      const k = width / v[2];
+      vis.view = v;
+      label.attr('transform', (d) => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
+      node.attr('transform', (d) => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
+      node.attr('r', (d) => d.r * k);
+    }
+
+    function zoom(d) {
+      if (d.depth === 1) {
+        filters.bubbleChart.certification = d.data.name;
+        filters.bubbleChart.certifier = undefined;
+      } else if (d.depth === 2) {
+        filters.bubbleChart.certifier = d.data.name;
+      } else if (d.depth === 0) {
+        filters.bubbleChart.certification = undefined;
+        filters.bubbleChart.certifier = undefined;
+      }
+
+      vis.focus = d;
+
+      const transition = vis.svg
+        .transition()
+        .duration(750)
+        .tween('zoom', (d) => {
+          const i = d3.interpolateZoom(vis.view, [vis.focus.x, vis.focus.y, vis.focus.r * 2]);
+          return (t) => zoomTo(i(t));
+        });
+
+      label
+        .filter(function (d) {
+          return d.parent === vis.focus || this.style.display === 'inline';
+        })
+        .transition(transition)
+        .style('fill-opacity', (d) => (d.parent === vis.focus ? 1 : 0))
+        .on('start', function (d) {
+          if (d.parent === vis.focus) this.style.display = 'inline';
+        })
+        .on('end', function (d) {
+          if (d.parent !== vis.focus) this.style.display = 'none';
+        });
+
+      if (d.depth < 3) {
+        updateFilteredStates();
+        states.barChart.updateVis();
+        states.geoMap.updateVis();
+      }
+    }
   }
 }

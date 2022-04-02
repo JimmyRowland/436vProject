@@ -219,6 +219,7 @@ export function getCertifierGroups(farms) {
           return {
             name: certifier,
             children: farms.map((farm) => ({
+              name: 'farm',
               farm_id: farm.farm_id,
               children: states.locationsByFarmId[farm.farm_id].map((location) => ({
                 name: location.type,

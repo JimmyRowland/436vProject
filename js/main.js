@@ -21,7 +21,6 @@ import { PieChart } from './piechart';
 import produce from 'immer';
 import { Barchart } from './barChart';
 import { BubbleChart } from './bubbleChart';
-import { bubbleChart } from './bubbleChart2';
 
 let URI;
 const VITE_ENV = import.meta.env.VITE_ENV || 'development';
@@ -71,6 +70,10 @@ export const filters = {
   },
   geoMap: {
     selectedFarmIdSet: new Set(),
+  },
+  bubbleChart: {
+    certification: undefined,
+    certifier: undefined,
   },
 };
 
@@ -138,7 +141,10 @@ Promise.all([
       parentElement: '#chart1',
     });
     states.barChart.updateVis();
-    bubbleChart();
+    states.bubbleChart = new BubbleChart({
+      parentElement: '#chart2',
+    });
+    states.bubbleChart.updateVis();
   })
   .catch((error) => console.error(error));
 
@@ -220,11 +226,17 @@ function fillChartDivWidth() {
   states.chart2.height = chartDiv2.offsetHeight;
 }
 
-function updateFilteredStates() {
+export function updateFilteredStates() {
   filteredStates.farms = produce([], () =>
     Object.values(filteredStates.farmWithAreaByFarmId).filter((farm) => {
       const areaBucket = areaAggregationBreakpoints.find((area) => area <= farm.total_area);
-      return filters.barchart.area[areaBucket] && filters.barchart.userCount[farm.number_of_users];
+      return (
+        filters.barchart.area[areaBucket] &&
+        filters.barchart.userCount[farm.number_of_users] &&
+        (!filters.bubbleChart.certification ||
+          filters.bubbleChart.certification === farm.certification) &&
+        (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier)
+      );
     }),
   );
   filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
@@ -243,9 +255,12 @@ function updateFilteredStates() {
 }
 
 export function updateCharts() {
+  filters.bubbleChart.certifier = undefined;
+  filters.bubbleChart.certification = undefined;
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();
+  states.bubbleChart.updateVis();
 }
 
 function logStates(data) {
