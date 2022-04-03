@@ -94,16 +94,19 @@ export class PieChart {
           .transition(t)
           .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
           .attrTween('transform', (d) => () => vis.labelTransform(d.current));
-
         if (p.depth === 0) {
-          filters.pieChart.crop_group = undefined;
-          filters.pieChart.crop_id = undefined;
           setTitleName();
-          onFilter();
+          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = undefined;
+            filters.pieChart.crop_id = undefined;
+            onFilter();
+          }
         } else if (p.depth === 1) {
-          filters.pieChart.crop_id = undefined;
           setTitleName();
-          onFilter();
+          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_id = undefined;
+            onFilter();
+          }
         }
       });
     vis.updateVis();
@@ -174,14 +177,20 @@ export class PieChart {
           .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
           .attrTween('transform', (d) => () => vis.labelTransform(d.current));
         if (p.depth === 1) {
-          filters.pieChart.crop_group = p.data.name;
-          filters.pieChart.crop_id = undefined;
           setTitleName(p.data.name);
-          onFilter();
+
+          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = p.data.name;
+            filters.pieChart.crop_id = undefined;
+            onFilter();
+          }
         } else if (p.depth === 2) {
-          filters.pieChart.crop_id = p.data.crop_id;
           setTitleName(p.data.name);
-          onFilter();
+
+          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_id = p.data.crop_id;
+            onFilter();
+          }
         }
       });
 
