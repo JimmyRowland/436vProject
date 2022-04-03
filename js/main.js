@@ -251,6 +251,8 @@ export function updateFilteredStates() {
 export function updateCharts() {
   filters.bubbleChart.certifier = undefined;
   filters.bubbleChart.certification = undefined;
+  filters.pieChart.crop_id = undefined;
+  filters.pieChart.crop_group = undefined;
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();

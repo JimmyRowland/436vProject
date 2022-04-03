@@ -116,16 +116,6 @@ export class BubbleChart {
     }
 
     function zoom(d) {
-      if (d.depth === 1) {
-        filters.bubbleChart.certification = d.data.name;
-        filters.bubbleChart.certifier = undefined;
-      } else if (d.depth === 2) {
-        filters.bubbleChart.certifier = d.data.name;
-      } else if (d.depth === 0) {
-        filters.bubbleChart.certification = undefined;
-        filters.bubbleChart.certifier = undefined;
-      }
-
       vis.focus = d;
 
       const transition = vis.svg
@@ -148,12 +138,24 @@ export class BubbleChart {
         .on('end', function (d) {
           if (d.parent !== vis.focus) this.style.display = 'none';
         });
+
       setTitleName(d.data.name);
-      if (d.depth < 3) {
-        updateFilteredStates();
-        states.barChart.updateVis();
-        states.geoMap.updateVis();
-        setTimeout(() => states.piechart.updateVis(), 1000);
+      if (!filters.pieChart.crop_group && !filters.pieChart.crop_id) {
+        if (d.depth === 1) {
+          filters.bubbleChart.certification = d.data.name;
+          filters.bubbleChart.certifier = undefined;
+        } else if (d.depth === 2) {
+          filters.bubbleChart.certifier = d.data.name;
+        } else if (d.depth === 0) {
+          filters.bubbleChart.certification = undefined;
+          filters.bubbleChart.certifier = undefined;
+        }
+        if (d.depth < 3) {
+          updateFilteredStates();
+          states.barChart.updateVis();
+          states.geoMap.updateVis();
+          setTimeout(() => states.piechart.updateVis(), 1000);
+        }
       }
     }
   }
