@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import {
   arc,
   hierarchy,
@@ -22,6 +23,7 @@ export class PieChart {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 932,
       margin: _config.margin || { top: 20, right: 20, bottom: 20, left: 20 },
+      tooltipPadding: _config.tooltipPadding || 15,
     };
     this.initVis();
   }
@@ -136,7 +138,17 @@ export class PieChart {
         return vis.colorScale(d.data.name);
       })
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
-      .attr('d', (d) => vis.arcGenerator(d.current));
+      .attr('d', (d) => vis.arcGenerator(d.current))
+      .on('mouseover', (event, d) => {
+        d3.select('#tooltip')
+          .style('display', 'block')
+          .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
+          .style('top', event.pageY + vis.config.tooltipPadding + 'px')
+          .html(getCropTooltipContent(d));
+      })
+      .on('mouseleave', () => {
+        d3.select('#tooltip').style('display', 'none');
+      });
 
     vis.path
       .filter((d) => d.children)
@@ -232,4 +244,35 @@ function onFilter() {
 
 export function setTitleName(name = 'crop') {
   document.getElementById('crop-title').innerText = name;
+}
+
+function getCropTooltipContent(d) {
+  if (d.depth === 1) {
+    return `
+              <div class="tooltip-title">crop group</div>
+              <ul>
+                <li>crop group: ${d.data.name}</li>
+                <li>number of crops: ${d.children.length}</li>
+                <li>number of varieties: ${d.value}</li>
+              </ul>
+            `;
+  }
+  if (d.depth === 2) {
+    return `
+              <div class="tooltip-title">crop</div>
+              <ul>
+                <li>crop group: ${d.parent.data.name}</li>
+                <li>crop: ${d.data.name}</li>
+                <li>number of varieties: ${d.value}</li>
+              </ul>
+            `;
+  }
+  return `
+              <div class="tooltip-title">variety</div>
+              <ul>
+                <li>crop group: ${d.parent.parent.data.name}</li>
+                <li>crop: ${d.parent.data.name}</li>
+                <li>variety: ${d.data.name}</li>
+              </ul>
+            `;
 }
