@@ -15,6 +15,7 @@ export class BubbleChart {
     // Configuration object with defaults
     this.config = {
       parentElement: _config.parentElement,
+      tooltipPadding: _config.tooltipPadding || 15,
     };
     this.initVis();
   }
@@ -78,11 +79,17 @@ export class BubbleChart {
       .attr('fill', setCircleColor)
       .attr('pointer-events', (d) => (!d.children ? 'none' : null))
       .attr('opacity', (d) => (d.height === 0 ? 0.3 : 1))
-      .on('mouseover', function () {
+      .on('mouseover', function (event, d) {
         d3.select(this).attr('stroke', '#000');
+        d3.select('#tooltip')
+          .style('display', 'block')
+          .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
+          .style('top', event.pageY + vis.config.tooltipPadding + 'px')
+          .html(getCertificationTooltipContent(d));
       })
       .on('mouseout', function () {
         d3.select(this).attr('stroke', null);
+        d3.select('#tooltip').style('display', 'none');
       })
       .on('click', (event, d) => vis.focus !== d && (zoom(d), event.stopPropagation()));
     const label = vis.label
@@ -105,6 +112,7 @@ export class BubbleChart {
       newcolor.l += depth == 1 ? 0 : depth * 0.1;
       return newcolor;
     }
+
     zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
 
     function zoomTo(v) {
@@ -163,4 +171,47 @@ export class BubbleChart {
 
 function setTitleName(name = 'certification') {
   document.getElementById('certification-title').innerText = name;
+}
+
+function getCertificationTooltipContent(d) {
+  if (d.depth === 1) {
+    return `
+              <div class="tooltip-title">certification</div>
+              <ul>
+                <li>certification: ${d.data.name}</li>
+                <li>number of certifiers: ${d.children.length}</li>
+                <li>number of farms: ${d.children.reduce(
+                  (sum, certifier) => sum + certifier.children.length,
+                  0,
+                )}</li>
+              </ul>
+            `;
+  }
+  if (d.depth === 2) {
+    return `
+              <div class="tooltip-title">certifier</div>
+              <ul>
+                <li>certification: ${d.parent.data.name}</li>
+                <li>certifier: ${d.data.name}</li>
+                <li>number of farms: ${d.children.length}</li>
+              </ul>
+            `;
+  }
+
+  if (d.depth === 3) {
+    return `
+              <div class="tooltip-title">farm</div>
+              <ul>
+                <li>certification: ${d.parent.parent.data.name}</li>
+                <li>certifier: ${d.parent.data.name}</li>
+              </ul>
+            `;
+  }
+  return `
+              <div class="tooltip-title">location</div>
+              <ul>
+                <li>certification: ${d.parent.parent.parent.data.name}</li>
+                <li>certifier: ${d.parent.parent.data.name}</li>
+              </ul>
+            `;
 }
