@@ -46,7 +46,7 @@ export class PieChart {
     vis.svg = select(vis.config.parentElement)
       .append('svg')
       .attr('viewBox', [0, 0, vis.width, vis.width])
-      .style('font', '9px sans-serif');
+      .style('font', '11px sans-serif');
 
     vis.chart = vis.svg
       .append('g')
@@ -217,7 +217,7 @@ export class PieChart {
       .join('text')
       .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
       .attr('transform', (d) => vis.labelTransform(d.current))
-      .text((d) => truncate(d.data.name, 36));
+      .text((d) => truncate(d.data.name, 30));
   }
 
   arcVisible(d) {
