@@ -1,6 +1,6 @@
 import produce from 'immer';
 import { states } from './main';
-import * as d3 from 'd3';
+import { scaleOrdinal, schemeSet3 } from 'd3';
 
 export const getFarmsCountryIdMap = (farms, countryNameIdMap) => {
   return Object.values(farms).reduce((farmsByISO, farm) => {
@@ -115,10 +115,9 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   },
   {},
 );
-export const areaColorScale = d3
-  .scaleOrdinal()
+export const areaColorScale = scaleOrdinal()
   .domain(areaAggregationBreakpoints)
-  .range(d3.schemeSet3);
+  .range(schemeSet3);
 
 export function getFarmsByUserCount(farmsWithArea) {
   return farmsWithArea.reduce((farmsByUserCount, farm) => {

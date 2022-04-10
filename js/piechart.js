@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 import {
   arc,
   hierarchy,
@@ -7,7 +6,7 @@ import {
   partition,
   quantize,
   scaleOrdinal,
-  select,
+  select
 } from 'd3';
 import { getCropGroupData } from './utils';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
@@ -142,14 +141,14 @@ export class PieChart {
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current))
       .on('mouseover', (event, d) => {
-        d3.select('#tooltip')
+        select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
           .style('top', event.pageY + vis.config.tooltipPadding + 'px')
           .html(getCropTooltipContent(d));
       })
       .on('mouseleave', () => {
-        d3.select('#tooltip').style('display', 'none');
+        select('#tooltip').style('display', 'none');
       });
 
     vis.path
