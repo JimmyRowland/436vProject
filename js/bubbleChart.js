@@ -149,16 +149,30 @@ export class BubbleChart {
 
       setTitleName(d.data.name);
       if (!filters.pieChart.crop_group && !filters.pieChart.crop_id) {
-        if (d.depth === 1) {
-          filters.bubbleChart.certification = d.data.name;
-          filters.bubbleChart.certifier = undefined;
-        } else if (d.depth === 2) {
-          filters.bubbleChart.certifier = d.data.name;
-        } else if (d.depth === 0) {
-          filters.bubbleChart.certification = undefined;
-          filters.bubbleChart.certifier = undefined;
+        const prevCertification = filters.bubbleChart.certification;
+        const prevCertifier = filters.bubbleChart.certifier;
+        switch (d.depth) {
+          case 0:
+            filters.bubbleChart.certification = undefined;
+            filters.bubbleChart.certifier = undefined;
+            break;
+          case 1:
+            filters.bubbleChart.certification = d.data.name;
+            filters.bubbleChart.certifier = undefined;
+            break;
+          case 2:
+            filters.bubbleChart.certifier = d.data.name;
+            filters.bubbleChart.certification = d.parent.data.name;
+            break;
+          case 3:
+            filters.bubbleChart.certifier = d.parent.data.name;
+            filters.bubbleChart.certification = d.parent.parent.data.name;
+            break;
         }
-        if (d.depth < 3) {
+        if (
+          filters.bubbleChart.certifier !== prevCertifier ||
+          filters.bubbleChart.certification !== prevCertification
+        ) {
           updateFilteredStates();
           states.barChart.updateVis();
           states.geoMap.updateVis();
