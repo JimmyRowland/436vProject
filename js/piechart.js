@@ -64,6 +64,7 @@ export class PieChart {
       .attr('fill', 'none')
       .attr('pointer-events', 'all')
       .on('click', (event, p) => {
+        if (!p) return;
         vis.parent.datum(vis.root);
         vis.root.each(
           (d) =>
@@ -104,8 +105,9 @@ export class PieChart {
             onFilter();
           }
         } else if (p.depth === 1) {
-          setTitleName();
+          setTitleName(p.data.name);
           if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = p.data.name;
             filters.pieChart.crop_id = undefined;
             onFilter();
           }
@@ -200,6 +202,7 @@ export class PieChart {
           setTitleName(p.data.name);
 
           if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = p.parent.data.name;
             filters.pieChart.crop_id = p.data.crop_id;
             onFilter();
           }
