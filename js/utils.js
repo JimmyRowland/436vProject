@@ -115,9 +115,7 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   },
   {},
 );
-export const areaColorScale = scaleOrdinal()
-  .domain(areaAggregationBreakpoints)
-  .range(schemeSet3);
+export const areaColorScale = scaleOrdinal().domain(areaAggregationBreakpoints).range(schemeSet3);
 
 export function getFarmsByUserCount(farmsWithArea) {
   return farmsWithArea.reduce((farmsByUserCount, farm) => {
@@ -126,6 +124,24 @@ export function getFarmsByUserCount(farmsWithArea) {
     return farmsByUserCount;
   }, {});
 }
+
+export const getfarmWithTypeByFarmId = (farms, locationsByFarmId) => {
+  return Object.entries(locationsByFarmId).reduce((farmWithAreaByFarmId, [farm_id, locations]) => {
+    const type = locations.reduce((type, location) => {
+      return location.type;
+    }, 0);
+    const area = locations.reduce((type, location) => {
+      return location.total_area;
+    }, 0);
+    const find = farms.find((d) => d.farm_id === farm_id);
+    if (find) {
+      locationsByFarmId = produce(locationsByFarmId, (locationsByFarmId) => {
+        locationsByFarmId[farm_id] = { area, type, farm_id };
+      });
+    }
+    return locationsByFarmId;
+  }, {});
+};
 
 export function getFarmAreaBucket(farm) {
   return areaAggregationBreakpoints.find((area) => area <= farm.total_area);
