@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 import {
   arc,
   hierarchy,
@@ -46,7 +45,7 @@ export class PieChart {
     vis.svg = select(vis.config.parentElement)
       .append('svg')
       .attr('viewBox', [0, 0, vis.width, vis.width])
-      .style('font', '9px sans-serif');
+      .style('font', '11px sans-serif');
 
     vis.chart = vis.svg
       .append('g')
@@ -64,6 +63,7 @@ export class PieChart {
       .attr('fill', 'none')
       .attr('pointer-events', 'all')
       .on('click', (event, p) => {
+        if (!p) return;
         vis.parent.datum(vis.root);
         vis.root.each(
           (d) =>
@@ -104,8 +104,9 @@ export class PieChart {
             onFilter();
           }
         } else if (p.depth === 1) {
-          setTitleName();
+          setTitleName(p.data.name);
           if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = p.data.name;
             filters.pieChart.crop_id = undefined;
             onFilter();
           }
@@ -140,14 +141,14 @@ export class PieChart {
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current))
       .on('mouseover', (event, d) => {
-        d3.select('#tooltip')
+        select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
           .style('top', event.pageY + vis.config.tooltipPadding + 'px')
           .html(getCropTooltipContent(d));
       })
       .on('mouseleave', () => {
-        d3.select('#tooltip').style('display', 'none');
+        select('#tooltip').style('display', 'none');
       });
 
     vis.path
@@ -200,6 +201,7 @@ export class PieChart {
           setTitleName(p.data.name);
 
           if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+            filters.pieChart.crop_group = p.parent.data.name;
             filters.pieChart.crop_id = p.data.crop_id;
             onFilter();
           }
@@ -214,7 +216,7 @@ export class PieChart {
       .join('text')
       .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
       .attr('transform', (d) => vis.labelTransform(d.current))
-      .text((d) => truncate(d.data.name, 36));
+      .text((d) => truncate(d.data.name, 30));
   }
 
   arcVisible(d) {
@@ -237,6 +239,7 @@ function onFilter() {
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();
+  states.treemap.updateVis();
   setTimeout(() => {
     states.bubbleChart.updateVis();
   }, 1000);

@@ -11,6 +11,7 @@ import { PieChart } from './piechart';
 import produce from 'immer';
 import { Barchart } from './barChart';
 import { BubbleChart } from './bubbleChart';
+import { Treemap } from './treemap';
 
 let URI;
 const VITE_ENV = import.meta.env.VITE_ENV || 'development';
@@ -129,6 +130,12 @@ Promise.all([
     states.piechart = new PieChart({
       parentElement: '#chart3',
     });
+
+    states.treemap = new Treemap({
+      parentElement: '#chart4',
+    });
+
+    states.treemap.updateVis();
 
     states.barChart = new Barchart({
       parentElement: '#chart1',
@@ -256,6 +263,7 @@ export function updateCharts() {
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();
+  states.treemap.updateVis();
   setTimeout(() => {
     states.bubbleChart.updateVis();
     states.piechart.updateVis();

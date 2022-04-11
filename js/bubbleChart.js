@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+import { scaleOrdinal, schemeCategory10, select, pack, hierarchy, hsl, interpolateZoom } from 'd3';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
 import { getCertifierGroups } from './utils';
 
@@ -25,10 +25,9 @@ export class BubbleChart {
    */
   initVis() {
     const vis = this;
-    vis.colorScale = d3.scaleOrdinal().range(d3.schemeCategory10);
+    vis.colorScale = scaleOrdinal().range(schemeCategory10);
 
-    vis.svg = d3
-      .select(vis.config.parentElement)
+    vis.svg = select(vis.config.parentElement)
       .append('svg')
       .attr('viewBox', `-${width / 2} -${height / 2} ${width} ${height}`)
       .style('display', 'block')
@@ -51,12 +50,10 @@ export class BubbleChart {
     const vis = this;
     const certificationGroup = getCertifierGroups(filteredStates.selectedFarms);
 
-    vis.root = d3
-      .pack()
+    vis.root = pack()
       .size([width - 300, height])
       .padding(7)(
-      d3
-        .hierarchy(certificationGroup)
+      hierarchy(certificationGroup)
         .sum((d) => d.value)
         .sort((a, b) => b.value - a.value),
     );
@@ -80,16 +77,16 @@ export class BubbleChart {
       .attr('pointer-events', (d) => (!d.children ? 'none' : null))
       .attr('opacity', (d) => (d.height === 0 ? 0.3 : 1))
       .on('mouseover', function (event, d) {
-        d3.select(this).attr('stroke', '#000');
-        d3.select('#tooltip')
+        select(this).attr('stroke', '#000');
+        select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
           .style('top', event.pageY + vis.config.tooltipPadding + 'px')
           .html(getCertificationTooltipContent(d));
       })
       .on('mouseout', function () {
-        d3.select(this).attr('stroke', null);
-        d3.select('#tooltip').style('display', 'none');
+        select(this).attr('stroke', null);
+        select('#tooltip').style('display', 'none');
       })
       .on('click', (event, d) => vis.focus !== d && (zoom(d), event.stopPropagation()));
     const label = vis.label
@@ -100,6 +97,12 @@ export class BubbleChart {
       .style('display', (d) => (d.parent === vis.root ? 'inline' : 'none'))
       .text((d) => d.data.name);
 
+    if (!vis.root.r) {
+      setTitleName('No Certifications Found');
+      return;
+    }
+    zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
+
     function setCircleColor(obj) {
       if (obj.height === 0) {
         return states.locationColorScale(obj.data.name);
@@ -108,16 +111,14 @@ export class BubbleChart {
       while (obj.depth > 1) {
         obj = obj.parent;
       }
-      let newcolor = d3.hsl(vis.colorScale(obj.data.name));
+      let newcolor = hsl(vis.colorScale(obj.data.name));
       newcolor.l += depth == 1 ? 0 : depth * 0.1;
       return newcolor;
     }
 
-    zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
-
     function zoomTo(v) {
-      const k = width / v[2];
       vis.view = v;
+      const k = width / v[2];
       label.attr('transform', (d) => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
       node.attr('transform', (d) => `translate(${(d.x - v[0]) * k},${(d.y - v[1]) * k})`);
       node.attr('r', (d) => d.r * k);
@@ -130,7 +131,7 @@ export class BubbleChart {
         .transition()
         .duration(750)
         .tween('zoom', (d) => {
-          const i = d3.interpolateZoom(vis.view, [vis.focus.x, vis.focus.y, vis.focus.r * 2]);
+          const i = interpolateZoom(vis.view, [vis.focus.x, vis.focus.y, vis.focus.r * 2]);
           return (t) => zoomTo(i(t));
         });
 
@@ -149,19 +150,34 @@ export class BubbleChart {
 
       setTitleName(d.data.name);
       if (!filters.pieChart.crop_group && !filters.pieChart.crop_id) {
-        if (d.depth === 1) {
-          filters.bubbleChart.certification = d.data.name;
-          filters.bubbleChart.certifier = undefined;
-        } else if (d.depth === 2) {
-          filters.bubbleChart.certifier = d.data.name;
-        } else if (d.depth === 0) {
-          filters.bubbleChart.certification = undefined;
-          filters.bubbleChart.certifier = undefined;
+        const prevCertification = filters.bubbleChart.certification;
+        const prevCertifier = filters.bubbleChart.certifier;
+        switch (d.depth) {
+          case 0:
+            filters.bubbleChart.certification = undefined;
+            filters.bubbleChart.certifier = undefined;
+            break;
+          case 1:
+            filters.bubbleChart.certification = d.data.name;
+            filters.bubbleChart.certifier = undefined;
+            break;
+          case 2:
+            filters.bubbleChart.certifier = d.data.name;
+            filters.bubbleChart.certification = d.parent.data.name;
+            break;
+          case 3:
+            filters.bubbleChart.certifier = d.parent.data.name;
+            filters.bubbleChart.certification = d.parent.parent.data.name;
+            break;
         }
-        if (d.depth < 3) {
+        if (
+          filters.bubbleChart.certifier !== prevCertifier ||
+          filters.bubbleChart.certification !== prevCertification
+        ) {
           updateFilteredStates();
           states.barChart.updateVis();
           states.geoMap.updateVis();
+          states.treemap.updateVis();
           setTimeout(() => states.piechart.updateVis(), 1000);
         }
       }

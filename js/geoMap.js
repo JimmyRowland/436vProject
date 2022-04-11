@@ -1,5 +1,5 @@
-import * as d3 from 'd3';
-import * as L from 'leaflet';
+import { scaleThreshold, scaleSqrt, schemeBlues, extent, sum, select } from 'd3';
+import { map, tileLayer, geoJSON, control, circle, DomUtil } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   areaColorScale,
@@ -10,7 +10,6 @@ import {
   getTotalAreaByCountryId,
 } from './utils';
 import { filteredStates, filters, states, updateCharts } from './main';
-import { filter } from 'd3';
 
 const getDefaultLayerStyle = (vis) => (d) => ({
   fillColor: vis.colorScale(vis.choropleth.choroplethData[d.id] || 0),
@@ -67,7 +66,7 @@ export class GeoMap {
    */
   initVis() {
     const vis = this;
-    vis.map = L.map('map');
+    vis.map = map('map');
     vis.map.setView(this.choropleth.center, this.choropleth.zoom);
     vis.map.removeEventListener();
     vis.map.on({
@@ -77,38 +76,38 @@ export class GeoMap {
         updateCharts();
       },
     });
-    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>',
     }).addTo(vis.map);
-    vis.geoLayers = L.geoJSON(vis.geoData, {
+    vis.geoLayers = geoJSON(vis.geoData, {
       onEachFeature: function (feature, layer) {
         vis.geoIdLayerMap[feature.id] = layer;
       },
     }).addTo(vis.map);
 
-    vis.gradeLegendControl = L.control({ position: 'bottomright' });
+    vis.gradeLegendControl = control({ position: 'bottomright' });
 
-    vis.farmNumberLegendControl = L.control();
+    vis.farmNumberLegendControl = control();
 
-    vis.colorScale = d3.scaleThreshold();
+    vis.colorScale = scaleThreshold();
 
-    vis.symbolScale = d3.scaleSqrt().range([100, 500]);
+    vis.symbolScale = scaleSqrt().range([100, 500]);
 
     vis.colorScale
       .domain(farmNumberByCountryIdDomain)
-      .range(d3.schemeBlues[farmNumberByCountryIdDomain.length + 1]);
+      .range(schemeBlues[farmNumberByCountryIdDomain.length + 1]);
 
     vis.farmWithAreaByFarmId = filteredStates.farmWithAreaByFarmId;
     vis.symbolScale.domain(
-      d3.extent(Object.values(vis.farmWithAreaByFarmId).map(({ total_area }) => total_area)),
+      extent(Object.values(vis.farmWithAreaByFarmId).map(({ total_area }) => total_area)),
     );
     for (const farm of Object.values(vis.farmWithAreaByFarmId)) {
-      const circle = L.circle([farm.grid_points.lat, farm.grid_points.lng], {
+      const farmCircle = circle([farm.grid_points.lat, farm.grid_points.lng], {
         radius: vis.symbolScale(farm.total_area),
         className: 'circle',
       }).addTo(vis.map);
-      circle.farm = farm;
-      vis.circles.push(circle);
+      farmCircle.farm = farm;
+      vis.circles.push(farmCircle);
     }
     vis.updateVis();
   }
@@ -133,7 +132,7 @@ export class GeoMap {
     vis.geoLayers.setStyle(getDefaultLayerStyle(vis));
 
     vis.farmNumberLegendControl.onAdd = function (map) {
-      vis.farmNumberLegend = L.DomUtil.create('div', 'info');
+      vis.farmNumberLegend = DomUtil.create('div', 'info');
       this.update();
       return vis.farmNumberLegend;
     };
@@ -142,10 +141,10 @@ export class GeoMap {
       const country = feature ? `<p>Country: ${feature.properties.name}</p>` : '';
       const data = feature
         ? vis.choropleth.choroplethData[feature.id] || 0
-        : d3.sum(Object.values(vis.choropleth.choroplethData));
+        : sum(Object.values(vis.choropleth.choroplethData));
       const area = feature
         ? vis.choropleth.areaByCountryId[feature.id] || 0
-        : d3.sum(Object.values(vis.choropleth.areaByCountryId));
+        : sum(Object.values(vis.choropleth.areaByCountryId));
       vis.farmNumberLegend.innerHTML = `<h4>${vis.choropleth.title}</h4>
            ${country}
         <p>${vis.choropleth.columnName}: ${data}</p>
@@ -166,7 +165,7 @@ export class GeoMap {
             fillOpacity: 0.7,
             // zIndex: 999,
           });
-          // if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+          // if (!Browser.ie && !Browser.opera && !Browser.edge) {
           //   e.target.bringToFront();
           // }
           vis.farmNumberLegendControl.update(layer.feature);
@@ -217,8 +216,8 @@ export class GeoMap {
     });
 
     vis.gradeLegendControl.onAdd = function (map) {
-      vis.gradeLegend && L.DomUtil.remove(vis.gradeLegend);
-      vis.gradeLegend = L.DomUtil.create('div', 'info legend');
+      vis.gradeLegend && DomUtil.remove(vis.gradeLegend);
+      vis.gradeLegend = DomUtil.create('div', 'info legend');
       const grades = farmNumberByCountryIdDomain;
 
       for (let i = 0; i < grades.length; i++) {
@@ -230,35 +229,35 @@ export class GeoMap {
       return vis.gradeLegend;
     };
     vis.gradeLegendControl.addTo(vis.map);
-    for (const circle of vis.circles) {
-      const farm = circle.farm;
+    for (const farmCircle of vis.circles) {
+      const farm = farmCircle.farm;
       const clickable = filteredStates.farmIdSet.has(farm.farm_id);
       const selected = filters.geoMap.selectedFarmIdSet.has(farm.farm_id);
 
-      circle.setStyle({
+      farmCircle.setStyle({
         color: clickable && selected ? 'red' : 'rgb(51, 136, 255)',
         fillColor: areaColorScale(getFarmAreaBucket(farm)),
         opacity: clickable ? 0.8 : 0,
         fillOpacity: clickable ? 1 : 0.1,
       });
-      circle.removeEventListener();
+      farmCircle.removeEventListener();
       clickable &&
-        circle.on({
+        farmCircle.on({
           mouseover: (e) => {
-            d3.select('#tooltip')
+            select('#tooltip')
               .style('display', 'block')
               .style('left', e.originalEvent.clientX + 12 + 'px')
               .style('top', e.originalEvent.clientY + 12 + 'px')
               .html(getFarmTooltipContent(farm));
           },
           mouseout: (e) => {
-            d3.select('#tooltip').style('display', 'none');
+            select('#tooltip').style('display', 'none');
           },
           click: (e) => {
             selected
               ? filters.geoMap.selectedFarmIdSet.delete(farm.farm_id)
               : filters.geoMap.selectedFarmIdSet.add(farm.farm_id);
-            circle.setStyle({
+            farmCircle.setStyle({
               color: !selected ? 'red' : 'rgb(51, 136, 255)',
             });
             updateCharts();

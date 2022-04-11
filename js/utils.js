@@ -1,6 +1,6 @@
 import produce from 'immer';
 import { states } from './main';
-import * as d3 from 'd3';
+import { scaleOrdinal, schemeYlGn } from 'd3';
 
 export const getFarmsCountryIdMap = (farms, countryNameIdMap) => {
   return Object.values(farms).reduce((farmsByISO, farm) => {
@@ -103,6 +103,55 @@ export function getCropGroupData(farms) {
   return { name: 'crop_group', children: getCropGroups(farms) };
 }
 
+// Treemap
+export const getfarmWithTypeByFarmId = (farms, locationsByFarmId) => {
+  return Object.entries(locationsByFarmId).reduce((farmWithAreaByFarmId, [farm_id, locations]) => {
+    const type = locations.reduce((type, location) => {
+      return location.type;
+    }, 0);
+    const area = locations.reduce((type, location) => {
+      return location.total_area;
+    }, 0);
+    const find = farms.find((d) => d.farm_id === farm_id);
+    if (find && area > 1500) {
+      locationsByFarmId = produce(locationsByFarmId, (locationsByFarmId) => {
+        locationsByFarmId[farm_id] = { area, type, farm_id };
+      });
+    }
+    return locationsByFarmId;
+  }, {});
+};
+
+export function getFarmTooltipContentTreeMap(farms, location_farm) {
+  const farm = farms.find((d) => d.farm_id === location_farm.data.farm_id);
+  const certification = farm.certification
+    ? `
+                <li>certification: ${farm.certification}</li>
+                <li>certifier: ${farm.certifier}</li>
+    `
+    : '';
+  const locations = Array.from(
+    new Set(states.locationsByFarmId[farm.farm_id].map((location) => location.type)),
+  ).join(', ');
+  const crops = Array.from(
+    new Set(
+      states.cropVarietiesByFarmId[farm.farm_id].map(
+        ({ crop_id }) => states.crops[crop_id].crop_common_name,
+      ),
+    ),
+  ).join(', ');
+  return `
+                <div class="tooltip-title">farm</div>
+              <ul>
+                <li>number of users: ${farm.number_of_users}</li>
+                <li>area: ${farm.total_area} \u33A1</li>
+                ${certification}
+                <li>locations: ${locations}</li>
+                <li>crops: ${crops}</li>
+              </ul>
+  `;
+}
+
 //Percent stacked bar chart
 export const areaAggregationBreakpoints = produce([], (_) => [0, 10000, 100000].reverse());
 export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
@@ -115,14 +164,13 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   },
   {},
 );
-export const areaColorScale = d3
-  .scaleOrdinal()
+export const areaColorScale = scaleOrdinal()
   .domain(
     produce(areaAggregationBreakpoints, (areaAggregationBreakpoints) =>
       areaAggregationBreakpoints.reverse(),
     ),
   )
-  .range(d3.schemeYlGn[areaAggregationBreakpoints.length]);
+  .range(schemeYlGn[areaAggregationBreakpoints.length]);
 
 export function getFarmsByUserCount(farmsWithArea) {
   return farmsWithArea.reduce((farmsByUserCount, farm) => {

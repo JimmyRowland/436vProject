@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+import { max, scaleLinear, select, stack, axisBottom, axisLeft, scaleBand } from 'd3';
 import { filteredStates, filters, states, updateCharts } from './main';
 import {
   areaAggregationBreakpoints,
@@ -15,7 +15,7 @@ const buttonTextMap = {
   count: {
     group: getFarmCountByUserCountGroup,
     getMax: (data) =>
-      d3.max(data, (d) => areaAggregationBreakpoints.reduce((sum, key) => sum + (d[key] || 0), 0)),
+      max(data, (d) => areaAggregationBreakpoints.reduce((sum, key) => sum + (d[key] || 0), 0)),
     format: (d) => d,
   },
 };
@@ -53,16 +53,14 @@ export class Barchart {
 
     // Initialize scales and axes
     // Important: we flip array elements in the y output range to position the rectangles correctly
-    vis.yScale = d3.scaleLinear().range([vis.height, 0]);
+    vis.yScale = scaleLinear().range([vis.height, 0]);
 
-    vis.xScale = d3
-      .scaleBand()
+    vis.xScale = scaleBand()
       .range([12, vis.width - 12])
       .paddingInner(0.2);
 
     // Define size of SVG drawing area
-    vis.svg = d3
-      .select(vis.config.parentElement)
+    vis.svg = select(vis.config.parentElement)
       .append('svg')
       .attr('width', vis.config.containerWidth)
       .attr('height', vis.config.containerHeight);
@@ -121,7 +119,7 @@ export class Barchart {
         .attr('opacity', filters.barchart.area[breakpoint] ? 1 : 0.2)
         .on('click', () => {
           filters.barchart.area[breakpoint] = !filters.barchart.area[breakpoint];
-          d3.select(`#bar-area-label${index}`).attr(
+          select(`#bar-area-label${index}`).attr(
             'opacity',
             filters.barchart.area[breakpoint] ? 1 : 0.2,
           );
@@ -161,7 +159,7 @@ export class Barchart {
           filters.barchart.userCount[number_of_users] = !filters.barchart.userCount[
             number_of_users
           ];
-          d3.select(`#bar-user-label${index}`).attr(
+          select(`#bar-user-label${index}`).attr(
             'opacity',
             filters.barchart.userCount[number_of_users] ? 1 : 0.2,
           );
@@ -204,18 +202,17 @@ export class Barchart {
     );
     const buttonText = vis.buttonText.text();
     vis.data = buttonTextMap[buttonText].group(filteredStates.farmsByUserCountAreaBucket);
-    vis.stackedData = d3.stack().keys([...areaAggregationBreakpoints].reverse())(vis.data);
+    vis.stackedData = stack().keys([...areaAggregationBreakpoints].reverse())(vis.data);
 
     vis.xScale.domain(Object.keys(filteredStates.farmsByUserCountAreaBucket).sort());
     vis.yScale.domain([0, buttonTextMap[buttonText].getMax(vis.data)]);
-    vis.yAxis = d3
-      .axisLeft(vis.yScale)
+    vis.yAxis = axisLeft(vis.yScale)
       .tickSize(-vis.width)
       .tickPadding(10)
       .ticks(5)
       .tickSizeOuter(0)
       .tickFormat(buttonTextMap[buttonText].format);
-    vis.xAxis = d3.axisBottom(vis.xScale).tickSizeOuter(0);
+    vis.xAxis = axisBottom(vis.xScale).tickSizeOuter(0);
     vis.renderVis();
   }
 
@@ -244,14 +241,14 @@ export class Barchart {
     vis.chart
       .selectAll('rect')
       .on('mouseover', (event, d) => {
-        d3.select('#tooltip')
+        select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX + vis.config.tooltipPadding + 'px')
           .style('top', event.pageY - 2 * vis.config.tooltipPadding + 'px')
           .html(getFarmCountTooltipContent(d));
       })
       .on('mouseleave', () => {
-        d3.select('#tooltip').style('display', 'none');
+        select('#tooltip').style('display', 'none');
       });
 
     vis.xAxisG.transition().call(vis.xAxis);
