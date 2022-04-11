@@ -134,7 +134,7 @@ export const getfarmWithTypeByFarmId = (farms, locationsByFarmId) => {
       return location.total_area;
     }, 0);
     const find = farms.find((d) => d.farm_id === farm_id);
-    if (find) {
+    if (find && area > 1500) {
       locationsByFarmId = produce(locationsByFarmId, (locationsByFarmId) => {
         locationsByFarmId[farm_id] = { area, type, farm_id };
       });

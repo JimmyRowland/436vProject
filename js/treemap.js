@@ -1,5 +1,5 @@
 import { scaleOrdinal, select, treemap, hierarchy, group, treemapBinary } from 'd3';
-import { filteredStates, filters, states, updateCharts } from './main';
+import { filteredStates, states } from './main';
 import { getfarmWithTypeByFarmId } from './utils';
 
 export class Treemap {
@@ -14,9 +14,7 @@ export class Treemap {
       parentElement: _config.parentElement,
       containerWidth: _config.containerWidth || 1000,
       containerHeight: _config.containerHeight || 500,
-      margin: _config.margin || { top: 32, right: 130, bottom: 40, left: 40 },
-      reverseOrder: _config.reverseOrder || false,
-      tooltipPadding: _config.tooltipPadding || 15,
+      margin: _config.margin || { top: 20, right: 20, bottom: 20, left: 0 },
     };
     this.state = _state;
 
@@ -67,6 +65,78 @@ export class Treemap {
         '#E4FDE1',
       ]);
 
+    // create legend
+    vis.svg.append('circle').attr('cx', 18).attr('cy', 8).attr('r', 6).style('fill', '#57B8FF');
+    vis.svg
+      .append('text')
+      .attr('x', 28)
+      .attr('y', 8)
+      .text('field')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 80).attr('cy', 8).attr('r', 6).style('fill', '#2176AE');
+    vis.svg
+      .append('text')
+      .attr('x', 90)
+      .attr('y', 8)
+      .text('greenhouse')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 190).attr('cy', 8).attr('r', 6).style('fill', '#FBB13C');
+    vis.svg
+      .append('text')
+      .attr('x', 200)
+      .attr('y', 8)
+      .text('garden')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 270).attr('cy', 8).attr('r', 6).style('fill', '#E4FDE1');
+    vis.svg
+      .append('text')
+      .attr('x', 280)
+      .attr('y', 8)
+      .text('barn')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 330).attr('cy', 8).attr('r', 6).style('fill', '#FE6847');
+    vis.svg
+      .append('text')
+      .attr('x', 340)
+      .attr('y', 8)
+      .text('boundary')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 425).attr('cy', 8).attr('r', 6).style('fill', '#B66D0D');
+    vis.svg
+      .append('text')
+      .attr('x', 435)
+      .attr('y', 8)
+      .text('ceremonial area')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg.append('circle').attr('cx', 560).attr('cy', 8).attr('r', 6).style('fill', '#EBA6A9');
+    vis.svg
+      .append('text')
+      .attr('x', 570)
+      .attr('y', 8)
+      .text('residence')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg
+      .append('text')
+      .attr('x', 680)
+      .attr('y', 8)
+      .text('number represents area in m2')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
     vis.updateVis();
   }
 
@@ -80,7 +150,9 @@ export class Treemap {
     var groups = group(Object.values(vis.data), (d) => d.type);
 
     vis.root = hierarchy(groups).sum((d) => d.area);
-    vis.root.sort();
+    vis.root.sort(function (a, b) {
+      return b.height - a.height || b.value - a.value;
+    });
 
     vis.renderVis();
   }
@@ -101,7 +173,7 @@ export class Treemap {
       .paddingLeft(5)
       .round(true)(vis.root);
 
-    vis.svg
+    vis.chart
       .selectAll('rect')
       .data(vis.root.leaves())
       .join('rect')
@@ -113,7 +185,7 @@ export class Treemap {
       .style('stroke', 'black')
       .style('fill', (d) => vis.colourScale(d.data.type));
 
-    vis.svg
+    vis.chart
       .selectAll('text')
       .data(vis.root.leaves())
       .join('text')
