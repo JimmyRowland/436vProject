@@ -53,7 +53,7 @@ export class BubbleChart {
     vis.root = pack()
       .size([width - 300, height])
       .padding(7)(
-        hierarchy(certificationGroup)
+      hierarchy(certificationGroup)
         .sum((d) => d.value)
         .sort((a, b) => b.value - a.value),
     );
@@ -96,9 +96,9 @@ export class BubbleChart {
       .style('fill-opacity', (d) => (d.parent === vis.root ? 1 : 0))
       .style('display', (d) => (d.parent === vis.root ? 'inline' : 'none'))
       .text((d) => d.data.name);
-      
-    if (!vis.root.r) { 
-      setTitleName("No Certifications Found");
+
+    if (!vis.root.r) {
+      setTitleName('No Certifications Found');
       return;
     }
     zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
@@ -177,6 +177,7 @@ export class BubbleChart {
           updateFilteredStates();
           states.barChart.updateVis();
           states.geoMap.updateVis();
+          states.treemap.updateVis();
           setTimeout(() => states.piechart.updateVis(), 1000);
         }
       }

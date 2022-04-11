@@ -6,7 +6,7 @@ import {
   partition,
   quantize,
   scaleOrdinal,
-  select
+  select,
 } from 'd3';
 import { getCropGroupData } from './utils';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
@@ -239,6 +239,7 @@ function onFilter() {
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();
+  states.treemap.updateVis();
   setTimeout(() => {
     states.bubbleChart.updateVis();
   }, 1000);
