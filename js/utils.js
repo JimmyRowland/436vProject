@@ -141,10 +141,11 @@ export function getFarmTooltipContentTreeMap(farms, location_farm) {
     ),
   ).join(', ');
   return `
-                <div class="tooltip-title">farm</div>
+                <div class="tooltip-title">${location_farm.data.type}</div>
               <ul>
+                <li>${location_farm.data.type} area: ${location_farm.data.area} \u33A1</li>
                 <li>number of users: ${farm.number_of_users}</li>
-                <li>area: ${farm.total_area} \u33A1</li>
+                <li>farm area: ${farm.total_area} \u33A1</li>
                 ${certification}
                 <li>locations: ${locations}</li>
                 <li>crops: ${crops}</li>

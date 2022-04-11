@@ -1,6 +1,6 @@
-import { scaleOrdinal, select, treemap, hierarchy, group, treemapBinary } from 'd3';
+import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
 import { filteredStates, states } from './main';
-import { getfarmWithTypeByFarmId, getFarmTooltipContentTreeMap } from './utils';
+import { getFarmTooltipContentTreeMap, getfarmWithTypeByFarmId } from './utils';
 
 export class Treemap {
   /**
@@ -187,7 +187,7 @@ export class Treemap {
       .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
-          .style('left', event.pageX + 'px')
+          .style('left', event.pageX - 100 + 'px')
           .style('top', event.pageY + 'px')
           .html(getFarmTooltipContentTreeMap(filteredStates.farms, d));
       })
