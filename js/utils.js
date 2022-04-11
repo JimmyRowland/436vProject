@@ -117,8 +117,12 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
 );
 export const areaColorScale = d3
   .scaleOrdinal()
-  .domain(areaAggregationBreakpoints)
-  .range(d3.schemeSet3);
+  .domain(
+    produce(areaAggregationBreakpoints, (areaAggregationBreakpoints) =>
+      areaAggregationBreakpoints.reverse(),
+    ),
+  )
+  .range(d3.schemeYlGn[areaAggregationBreakpoints.length]);
 
 export function getFarmsByUserCount(farmsWithArea) {
   return farmsWithArea.reduce((farmsByUserCount, farm) => {
