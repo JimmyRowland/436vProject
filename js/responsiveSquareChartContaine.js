@@ -1,4 +1,4 @@
-import { min, select} from 'd3';
+import { min, select } from 'd3';
 import { states } from './main';
 
 export function responsiveSquareChartContainer(parentElement) {

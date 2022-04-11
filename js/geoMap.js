@@ -1,5 +1,5 @@
-import { scaleThreshold, scaleSqrt, schemeBlues, extent, sum, select} from 'd3';
-import { map, tileLayer, geoJSON, control, circle, DomUtil} from 'leaflet';
+import { scaleThreshold, scaleSqrt, schemeBlues, extent, sum, select } from 'd3';
+import { map, tileLayer, geoJSON, control, circle, DomUtil } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   areaColorScale,
@@ -242,7 +242,7 @@ export class GeoMap {
       });
       farmCircle.removeEventListener();
       clickable &&
-      farmCircle.on({
+        farmCircle.on({
           mouseover: (e) => {
             select('#tooltip')
               .style('display', 'block')
@@ -257,7 +257,7 @@ export class GeoMap {
             selected
               ? filters.geoMap.selectedFarmIdSet.delete(farm.farm_id)
               : filters.geoMap.selectedFarmIdSet.add(farm.farm_id);
-              farmCircle.setStyle({
+            farmCircle.setStyle({
               color: !selected ? 'red' : 'rgb(51, 136, 255)',
             });
             updateCharts();

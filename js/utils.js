@@ -1,6 +1,6 @@
 import produce from 'immer';
 import { states } from './main';
-import { scaleOrdinal, schemeSet3 } from 'd3';
+import { scaleOrdinal, schemeYlGn } from 'd3';
 
 export const getFarmsCountryIdMap = (farms, countryNameIdMap) => {
   return Object.values(farms).reduce((farmsByISO, farm) => {
@@ -141,10 +141,11 @@ export function getFarmTooltipContentTreeMap(farms, location_farm) {
     ),
   ).join(', ');
   return `
-                <div class="tooltip-title">farm</div>
+                <div class="tooltip-title">${location_farm.data.type}</div>
               <ul>
+                <li>${location_farm.data.type} area: ${location_farm.data.area} \u33A1</li>
                 <li>number of users: ${farm.number_of_users}</li>
-                <li>area: ${farm.total_area} \u33A1</li>
+                <li>farm area: ${farm.total_area} \u33A1</li>
                 ${certification}
                 <li>locations: ${locations}</li>
                 <li>crops: ${crops}</li>
@@ -164,7 +165,13 @@ export const areaBreakpointsLabelMap = areaAggregationBreakpoints.reduce(
   },
   {},
 );
-export const areaColorScale = scaleOrdinal().domain(areaAggregationBreakpoints).range(schemeSet3);
+export const areaColorScale = scaleOrdinal()
+  .domain(
+    produce(areaAggregationBreakpoints, (areaAggregationBreakpoints) =>
+      areaAggregationBreakpoints.reverse(),
+    ),
+  )
+  .range(schemeYlGn[areaAggregationBreakpoints.length]);
 
 export function getFarmsByUserCount(farmsWithArea) {
   return farmsWithArea.reduce((farmsByUserCount, farm) => {

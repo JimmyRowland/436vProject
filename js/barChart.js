@@ -1,4 +1,4 @@
-import { max, scaleLinear, select, stack, axisBottom, axisLeft, scaleBand } from 'd3'
+import { max, scaleLinear, select, stack, axisBottom, axisLeft, scaleBand } from 'd3';
 import { filteredStates, filters, states, updateCharts } from './main';
 import {
   areaAggregationBreakpoints,
