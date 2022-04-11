@@ -1,6 +1,5 @@
 body {
   margin: 0;
-  overflow: hidden;
 }
 .header {
   position: absolute;
@@ -88,6 +87,12 @@ body {
   z-index: 2000;
   justify-content: space-evenly;
 }
+.lower-charts {
+  display: flex;
+  flex-direction: column;
+  row-gap: 24px;
+}
+
 #chart1 {
   flex-grow: 1;
   max-width: 50%;
@@ -118,6 +123,11 @@ body {
 #chart3 {
   width: 100%;
   height: 100%;
+}
+#chart4 {
+  width: 100%;
+  position: relative;
+  flex-grow: 1;
 }
 
 #chart2:hover {

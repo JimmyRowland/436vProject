@@ -62,7 +62,7 @@ export class Treemap {
         '#FE6847',
         '#EBA6A9',
         '#51344D',
-        '#E4FDE1',
+        '#C14B0B',
       ]);
 
     // create legend
@@ -93,7 +93,7 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 270).attr('cy', 8).attr('r', 6).style('fill', '#E4FDE1');
+    vis.svg.append('circle').attr('cx', 270).attr('cy', 8).attr('r', 6).style('fill', '#C14B0B');
     vis.svg
       .append('text')
       .attr('x', 280)
