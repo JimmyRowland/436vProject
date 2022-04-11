@@ -1,6 +1,6 @@
 import { scaleOrdinal, select, treemap, hierarchy, group, treemapBinary } from 'd3';
 import { filteredStates, states } from './main';
-import { getfarmWithTypeByFarmId } from './utils';
+import { getfarmWithTypeByFarmId, getFarmTooltipContentTreeMap } from './utils';
 
 export class Treemap {
   /**
@@ -133,7 +133,7 @@ export class Treemap {
       .append('text')
       .attr('x', 680)
       .attr('y', 8)
-      .text('number represents area in m2')
+      .text('number represents area in m\u00B2')
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
@@ -183,7 +183,17 @@ export class Treemap {
       .attr('width', (d) => d.x1 - d.x0)
       .attr('height', (d) => d.y1 - d.y0)
       .style('stroke', 'black')
-      .style('fill', (d) => vis.colourScale(d.data.type));
+      .style('fill', (d) => vis.colourScale(d.data.type))
+      .on('mouseover', (event, d) => {
+        select('#tooltip')
+          .style('display', 'block')
+          .style('left', event.pageX + 'px')
+          .style('top', event.pageY + 'px')
+          .html(getFarmTooltipContentTreeMap(filteredStates.farms, d));
+      })
+      .on('mouseleave', () => {
+        select('#tooltip').style('display', 'none');
+      });
 
     vis.chart
       .selectAll('text')
