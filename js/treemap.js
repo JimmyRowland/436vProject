@@ -146,7 +146,7 @@ export class Treemap {
   updateVis() {
     let vis = this;
 
-    vis.data = getfarmWithTypeByFarmId(filteredStates.farms, states.locationsByFarmId);
+    vis.data = getfarmWithTypeByFarmId(filteredStates.selectedFarms, states.locationsByFarmId);
     var groups = group(Object.values(vis.data), (d) => d.type);
 
     vis.root = hierarchy(groups).sum((d) => d.area);
