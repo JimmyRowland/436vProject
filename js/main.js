@@ -72,6 +72,9 @@ export const filters = {
     crop_group: undefined,
     crop_id: undefined,
   },
+  treemap: {
+    selectedFarmIdSet: new Set(),
+  }
 };
 
 export const filteredStates = {

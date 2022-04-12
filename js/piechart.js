@@ -7,6 +7,7 @@ import {
   quantize,
   scaleOrdinal,
   select,
+  shuffle
 } from 'd3';
 import { getCropGroupData } from './utils';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
@@ -54,7 +55,7 @@ export class PieChart {
 
     vis.labelG = vis.chart.append('g').attr('pointer-events', 'none').attr('text-anchor', 'middle');
     vis.data = getCropGroupData(filteredStates.farms);
-    vis.colorScale = scaleOrdinal(quantize(interpolateRainbow, vis.data.children.length + 1));
+    vis.colorScale = scaleOrdinal(shuffle(quantize(interpolateRainbow, vis.data.children.length + 1)));
 
     vis.parent = vis.chart
       .append('circle')
@@ -140,7 +141,7 @@ export class PieChart {
       })
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current))
-      .on('mouseover', (event, d) => {
+      .on('mousemove', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')

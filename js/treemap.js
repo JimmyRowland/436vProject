@@ -1,5 +1,5 @@
 import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
-import { filteredStates, states } from './main';
+import { filteredStates, filters, states, updateCharts } from './main';
 import { getFarmTooltipContentTreeMap, getfarmWithTypeByFarmId } from './utils';
 
 export class Treemap {
@@ -184,7 +184,7 @@ export class Treemap {
       .attr('height', (d) => d.y1 - d.y0)
       .style('stroke', 'black')
       .style('fill', (d) => vis.colourScale(d.data.type))
-      .on('mouseover', (event, d) => {
+      .on('mousemove', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 100 + 'px')
@@ -193,6 +193,16 @@ export class Treemap {
       })
       .on('mouseleave', () => {
         select('#tooltip').style('display', 'none');
+      })
+      .on('click', (event, d) => {
+        const selected = filters.geoMap.selectedFarmIdSet.has(d.data.farm_id);
+        console.log(d.data);
+        console.log(filters.treemap.selectedFarmIdSet);
+        selected
+              ? filters.geoMap.selectedFarmIdSet.delete(d.data.farm_id)
+              : filters.geoMap.selectedFarmIdSet.add(d.data.farm_id);
+        console.log(filters.treemap.selectedFarmIdSet);
+        updateCharts();
       });
 
     vis.chart

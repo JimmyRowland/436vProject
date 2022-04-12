@@ -76,7 +76,7 @@ export class BubbleChart {
       .attr('fill', setCircleColor)
       .attr('pointer-events', (d) => (!d.children ? 'none' : null))
       .attr('opacity', (d) => (d.height === 0 ? 0.3 : 1))
-      .on('mouseover', function (event, d) {
+      .on('mousemove', function (event, d) {
         select(this).attr('stroke', '#000');
         select('#tooltip')
           .style('display', 'block')
