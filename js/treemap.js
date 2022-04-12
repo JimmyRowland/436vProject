@@ -1,5 +1,5 @@
 import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
-import { filteredStates, states } from './main';
+import { filteredStates, filters, updateCharts, states } from './main';
 import { getFarmTooltipContentTreeMap, getLocationAreaByFarmIdLocationType } from './utils';
 
 export class Treemap {
@@ -193,8 +193,6 @@ export class Treemap {
           .style('left', event.pageX - 100 + 'px')
           .style('top', event.pageY + 'px')
           .html(getFarmTooltipContentTreeMap(filteredStates.farms, d));
-      })
-      .on('mouseover', (event, d) => {
         filters.maps.mousedFarmIdSet.add(d.data.farm_id);
         states.geoMap.updateVis();
       })

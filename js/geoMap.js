@@ -235,9 +235,7 @@ export class GeoMap {
       const selected = filters.maps.selectedFarmIdSet.has(farm.farm_id);
 
       farmCircle.setStyle({
-        color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
-          'rgb(255, 115, 0)' :
-          selected ?
+        color: selected ?
             'red' :
             'rgb(51, 136, 255)',
         fillColor: areaColorScale(getFarmAreaBucket(farm)),
@@ -249,9 +247,8 @@ export class GeoMap {
         farmCircle.on({
           mouseover: (event) => {
             filters.maps.mousedFarmIdSet.add(farm.farm_id);
-
           },
-          mouseover: (e) => {
+          mousemove: (e) => {
             select('#tooltip')
               .style('display', 'block')
               .style('left', e.originalEvent.clientX + 12 + 'px')
