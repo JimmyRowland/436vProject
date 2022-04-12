@@ -316,6 +316,18 @@ export class Treemap {
       })
       .on('mouseleave', () => {
         select('#tooltip').style('display', 'none');
+      })
+      .on('click', (event, d) => {
+        if (filters.geoMap.selectedFarmIdSet.size !== 1) {
+          filters.geoMap.selectedFarmIdSet.clear();
+          filters.geoMap.selectedFarmIdSet.add(d.data.farm_id);
+          states.geoMap.selectFarm(d.data.farm_id);
+          updateCharts();
+        } else {
+          filters.geoMap.selectedFarmIdSet.clear();
+          states.geoMap.centerMap();
+          updateCharts();
+        }
       });
 
     // add area labels
