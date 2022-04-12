@@ -157,7 +157,7 @@ export class GeoMap {
     vis.geoLayers.eachLayer((layer) => {
       layer.clearAllEventListeners();
       layer.on({
-        mousemove: (e) => {
+        mouseover: (e) => {
           e.target.setStyle({
             weight: 5,
             color: '#666',
@@ -251,7 +251,7 @@ export class GeoMap {
             filters.maps.mousedFarmIdSet.add(farm.farm_id);
 
           },
-          mousemove: (e) => {
+          mouseover: (e) => {
             select('#tooltip')
               .style('display', 'block')
               .style('left', e.originalEvent.clientX + 12 + 'px')

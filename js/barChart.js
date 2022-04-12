@@ -240,7 +240,7 @@ export class Barchart {
 
     vis.chart
       .selectAll('rect')
-      .on('mousemove', (event, d) => {
+      .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX + vis.config.tooltipPadding + 'px')
