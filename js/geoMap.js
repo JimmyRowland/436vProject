@@ -235,7 +235,9 @@ export class GeoMap {
       const selected = filters.maps.selectedFarmIdSet.has(farm.farm_id);
 
       farmCircle.setStyle({
-        color: selected ?
+        color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
+          'rgb(255, 115, 0)' :
+          selected ?
             'red' :
             'rgb(51, 136, 255)',
         fillColor: areaColorScale(getFarmAreaBucket(farm)),
@@ -247,13 +249,6 @@ export class GeoMap {
         farmCircle.on({
           mouseover: (event) => {
             filters.maps.mousedFarmIdSet.add(farm.farm_id);
-          },
-          mousemove: (e) => {
-            select('#tooltip')
-              .style('display', 'block')
-              .style('left', e.originalEvent.clientX + 12 + 'px')
-              .style('top', e.originalEvent.clientY + 12 + 'px')
-              .html(getFarmTooltipContent(farm));
             farmCircle.setStyle({
               color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
                 'rgb(255, 115, 0)' :
@@ -261,6 +256,11 @@ export class GeoMap {
                   'red' :
                   'rgb(51, 136, 255)'
             });
+            select('#tooltip')
+              .style('display', 'block')
+              .style('left', event.originalEvent.clientX + 12 + 'px')
+              .style('top', event.originalEvent.clientY + 12 + 'px')
+              .html(getFarmTooltipContent(farm));
           },
           mouseout: (e) => {
             select('#tooltip').style('display', 'none');
@@ -277,11 +277,6 @@ export class GeoMap {
             selected
               ? filters.maps.selectedFarmIdSet.delete(farm.farm_id)
               : filters.maps.selectedFarmIdSet.add(farm.farm_id);
-            farmCircle.setStyle({
-              color: selected ?
-                'red' :
-                'rgb(51, 136, 255)'
-            });
             updateCharts();
           },
         });
