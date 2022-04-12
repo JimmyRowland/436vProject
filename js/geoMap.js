@@ -1,5 +1,5 @@
 import { extent, scaleSqrt, scaleThreshold, schemeBlues, select, sum } from 'd3';
-import { circle, control, DomUtil, geoJSON, map, tileLayer } from 'leaflet';
+import { circle, control, DomUtil, geoJSON, latLngBounds, map, tileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   areaColorScale,
@@ -123,6 +123,7 @@ export class GeoMap {
       states.countryNameIdMap,
       states.locationsByFarmId,
     );
+
     vis.renderVis();
   }
 
@@ -163,11 +164,7 @@ export class GeoMap {
             color: '#666',
             dashArray: '',
             fillOpacity: 0.7,
-            // zIndex: 999,
           });
-          // if (!Browser.ie && !Browser.opera && !Browser.edge) {
-          //   e.target.bringToFront();
-          // }
           vis.farmNumberLegendControl.update(layer.feature);
         },
         mouseout: (e) => {
@@ -177,9 +174,7 @@ export class GeoMap {
             color: 'white',
             weight: 2,
             fillOpacity: 0.7,
-            // zIndex: 0,
           });
-          // e.target.bringToBack()
         },
         click: (e) => {
           const farms = states.farmsByCountryName[layer.feature.properties.name] || [];
@@ -272,7 +267,18 @@ export class GeoMap {
     }
   }
 
-  updateCountry() {
+  selectFarm(farm_id) {
     const vis = this;
+    const farm = states.farms[farm_id];
+    const bounds = latLngBounds([
+      [farm.grid_points.lat - 0.01, farm.grid_points.lng],
+      [farm.grid_points.lat + 0.01, farm.grid_points.lng],
+    ]);
+    vis.map.fitBounds(bounds);
+  }
+
+  centerMap() {
+    const vis = this;
+    vis.map.setView(this.choropleth.center, this.choropleth.zoom);
   }
 }
