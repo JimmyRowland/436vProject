@@ -1,5 +1,5 @@
 import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
-import { filteredStates, states, filters, updateFilteredStates } from './main';
+import { filteredStates, filters, states, updateCharts } from './main';
 import { getFarmTooltipContentTreeMap, getLocationAreaByFarmIdLocationType } from './utils';
 
 export class Treemap {
@@ -136,15 +136,15 @@ export class Treemap {
       .append('text')
       .attr('x', 770)
       .attr('y', 8)
-      .text('water')
+      .text('surface water')
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
     vis.svg
       .append('text')
-      .attr('x', 850)
+      .attr('x', 900)
       .attr('y', 8)
-      .text('number is area in m\u00B2')
+      .text('unit: \u33A1')
       .style('font-size', '10px')
       .attr('alignment-baseline', 'middle');
 
@@ -207,7 +207,7 @@ export class Treemap {
       .attr('cx', 18)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'field')
       .style('fill', '#66A182')
       .style('stroke', 'black')
@@ -217,7 +217,7 @@ export class Treemap {
       .attr('cx', 80)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'greenhouse')
       .style('fill', '#2176AE')
       .style('stroke', 'black')
@@ -227,7 +227,7 @@ export class Treemap {
       .attr('cx', 190)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'garden')
       .style('fill', '#FBB13C')
       .style('stroke', 'black')
@@ -237,7 +237,7 @@ export class Treemap {
       .attr('cx', 270)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'barn')
       .style('fill', '#C14B0B')
       .style('stroke', 'black')
@@ -247,7 +247,7 @@ export class Treemap {
       .attr('cx', 330)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'farm_site_boundary')
       .style('fill', '#FE6847')
       .style('stroke', 'black')
@@ -257,7 +257,7 @@ export class Treemap {
       .attr('cx', 425)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'ceremonial_area')
       .style('fill', '#B66D0D')
       .style('stroke', 'black')
@@ -267,7 +267,7 @@ export class Treemap {
       .attr('cx', 560)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'residence')
       .style('fill', '#EBA6A9')
       .style('stroke', 'black')
@@ -277,7 +277,7 @@ export class Treemap {
       .attr('cx', 650)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'natural_area')
       .style('fill', '#51344D')
       .style('stroke', 'black')
@@ -287,24 +287,21 @@ export class Treemap {
       .attr('cx', 760)
       .attr('cy', 8)
       .attr('r', 6)
-      .attr('class', 'legend')
+      .attr('class', 'legend clickable')
       .attr('id', 'surface_water')
       .style('fill', '2176AE')
       .style('stroke', 'black')
       .style('stroke-width', 0);
 
     vis.svg.selectAll('.legend').on('click', (event, d) => {
-      if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-        if (filters.treemap.types.has(event.path[0].id)) {
-          filters.treemap.types.delete(event.path[0].id);
-          select('#' + event.path[0].id).style('stroke-width', 0);
-        } else {
-          filters.treemap.types.add(event.path[0].id);
-          select('#' + event.path[0].id).style('stroke-width', 4);
-        }
+      if (filters.treemap.types.has(event.path[0].id)) {
+        filters.treemap.types.delete(event.path[0].id);
+        select('#' + event.path[0].id).style('stroke-width', 0);
+      } else {
+        filters.treemap.types.add(event.path[0].id);
+        select('#' + event.path[0].id).style('stroke-width', 4);
       }
-      updateFilteredStates();
-      onFilter();
+      updateCharts();
     });
 
     // tool tips
@@ -336,15 +333,4 @@ export class Treemap {
       .attr('font-size', '10px')
       .attr('fill', 'white');
   }
-}
-
-// dashboard wide filter updating
-function onFilter() {
-  updateFilteredStates();
-  states.barChart.updateVis();
-  states.geoMap.updateVis();
-  states.treemap.updateVis();
-  setTimeout(() => {
-    states.bubbleChart.updateVis();
-  }, 1000);
 }

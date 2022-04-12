@@ -239,10 +239,17 @@ export function updateFilteredStates() {
         (!filters.pieChart.crop_id ||
           states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
         (!filters.pieChart.crop_group ||
-          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id))
+          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id)) &&
+        Array.from(filters.treemap.types).reduce(
+          (hasSelectedLocationTypes, locationType) =>
+            hasSelectedLocationTypes &&
+            states.locationsByFarmId[farm.farm_id].find(({ type }) => type === locationType),
+          true,
+        )
       );
     }),
   );
+
   filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
     let hasSelectedFarm = false;
     const selectedFarms = farms.filter(({ farm_id }) => {
@@ -254,20 +261,6 @@ export function updateFilteredStates() {
       }
     });
     return hasSelectedFarm ? selectedFarms : farms;
-  });
-  filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
-    const selectedFarms = farms.filter(({ farm_id }) => {
-      var hasType = false;
-      states.locationsByFarmId[farm_id].forEach((d) => {
-        if (filters.treemap.types.size != 0 && filters.treemap.types.has(d.type)) {
-          hasType = true;
-        } else {
-          hasType = false;
-        }
-      });
-      return hasType;
-    });
-    return filters.treemap.types.size != 0 ? selectedFarms : farms;
   });
   filteredStates.farmIdSet = new Set(filteredStates.farms.map((farm) => farm.farm_id));
 }
