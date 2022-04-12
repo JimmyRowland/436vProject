@@ -104,21 +104,23 @@ export function getCropGroupData(farms) {
 }
 
 // Treemap
-export const getfarmWithTypeByFarmId = (farms, locationsByFarmId) => {
-  return Object.entries(locationsByFarmId).reduce((farmWithAreaByFarmId, [farm_id, locations]) => {
-    const type = locations.reduce((type, location) => {
-      return location.type;
-    }, 0);
-    const area = locations.reduce((type, location) => {
-      return location.total_area;
-    }, 0);
-    const find = farms.find((d) => d.farm_id === farm_id);
-    if (find && area > 1500) {
-      locationsByFarmId = produce(locationsByFarmId, (locationsByFarmId) => {
-        locationsByFarmId[farm_id] = { area, type, farm_id };
-      });
-    }
-    return locationsByFarmId;
+export const getLocationAreaByFarmIdLocationType = (farms, locationsByFarmId) => {
+  return farms.reduce((farmWithAreaByFarmId, farm) => {
+    const locations = locationsByFarmId[farm.farm_id];
+    return locations.reduce((farmWithAreaByFarmId, location) => {
+      const key = farm.farm_id + location.type;
+      if (farmWithAreaByFarmId[key]) {
+        farmWithAreaByFarmId[key].area += location.total_area;
+      } else {
+        farmWithAreaByFarmId[key] = {
+          area: location.total_area,
+          type: location.type,
+          farm_id: farm.farm_id,
+          key,
+        };
+      }
+      return farmWithAreaByFarmId;
+    }, farmWithAreaByFarmId);
   }, {});
 };
 

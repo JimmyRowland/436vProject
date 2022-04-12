@@ -1,5 +1,5 @@
-import { scaleThreshold, scaleSqrt, schemeBlues, extent, sum, select } from 'd3';
-import { map, tileLayer, geoJSON, control, circle, DomUtil } from 'leaflet';
+import { extent, scaleSqrt, scaleThreshold, schemeBlues, select, sum } from 'd3';
+import { circle, control, DomUtil, geoJSON, latLngBounds, map, tileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   areaColorScale,
@@ -123,6 +123,7 @@ export class GeoMap {
       states.countryNameIdMap,
       states.locationsByFarmId,
     );
+
     vis.renderVis();
   }
 
@@ -157,17 +158,13 @@ export class GeoMap {
     vis.geoLayers.eachLayer((layer) => {
       layer.clearAllEventListeners();
       layer.on({
-        mousemove: (e) => {
+        mouseover: (e) => {
           e.target.setStyle({
             weight: 5,
             color: '#666',
             dashArray: '',
             fillOpacity: 0.7,
-            // zIndex: 999,
           });
-          // if (!Browser.ie && !Browser.opera && !Browser.edge) {
-          //   e.target.bringToFront();
-          // }
           vis.farmNumberLegendControl.update(layer.feature);
         },
         mouseout: (e) => {
@@ -177,9 +174,7 @@ export class GeoMap {
             color: 'white',
             weight: 2,
             fillOpacity: 0.7,
-            // zIndex: 0,
           });
-          // e.target.bringToBack()
         },
         click: (e) => {
           const farms = states.farmsByCountryName[layer.feature.properties.name] || [];
@@ -243,7 +238,10 @@ export class GeoMap {
       farmCircle.removeEventListener();
       clickable &&
         farmCircle.on({
-          mousemove: (e) => {
+          mouseover: (e) => {
+            farmCircle.setStyle({
+              color: 'rgb(255, 115, 0)',
+            });
             select('#tooltip')
               .style('display', 'block')
               .style('left', e.originalEvent.clientX + 12 + 'px')
@@ -252,6 +250,9 @@ export class GeoMap {
           },
           mouseout: (e) => {
             select('#tooltip').style('display', 'none');
+            farmCircle.setStyle({
+              color: selected ? 'red' : 'rgb(51, 136, 255)',
+            });
           },
           click: (e) => {
             selected
@@ -266,7 +267,18 @@ export class GeoMap {
     }
   }
 
-  updateCountry() {
+  selectFarm(farm_id) {
     const vis = this;
+    const farm = states.farms[farm_id];
+    const bounds = latLngBounds([
+      [farm.grid_points.lat - 0.01, farm.grid_points.lng],
+      [farm.grid_points.lat + 0.01, farm.grid_points.lng],
+    ]);
+    vis.map.fitBounds(bounds);
+  }
+
+  centerMap() {
+    const vis = this;
+    vis.map.setView(this.choropleth.center, this.choropleth.zoom);
   }
 }
