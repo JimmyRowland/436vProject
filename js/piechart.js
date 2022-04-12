@@ -140,7 +140,7 @@ export class PieChart {
       })
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current))
-      .on('mouseover', (event, d) => {
+      .on('mousemove', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
