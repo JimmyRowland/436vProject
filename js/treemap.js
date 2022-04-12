@@ -1,5 +1,5 @@
 import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
-import { filteredStates, states } from './main';
+import { filteredStates, states, filters, updateFilteredStates } from './main';
 import { getFarmTooltipContentTreeMap, getLocationAreaByFarmIdLocationType } from './utils';
 
 export class Treemap {
@@ -53,20 +53,21 @@ export class Treemap {
         'residence',
         'natural_area',
         'barn',
+        'surface_water',
       ])
       .range([
         '#2176AE',
-        '#57B8FF',
+        '#66A182',
         '#B66D0D',
         '#FBB13C',
         '#FE6847',
         '#EBA6A9',
         '#51344D',
         '#C14B0B',
+        '#2176AE',
       ]);
 
-    // create legend
-    vis.svg.append('circle').attr('cx', 18).attr('cy', 8).attr('r', 6).style('fill', '#57B8FF');
+    // add legend labels
     vis.svg
       .append('text')
       .attr('x', 28)
@@ -75,7 +76,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 80).attr('cy', 8).attr('r', 6).style('fill', '#2176AE');
     vis.svg
       .append('text')
       .attr('x', 90)
@@ -84,7 +84,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 190).attr('cy', 8).attr('r', 6).style('fill', '#FBB13C');
     vis.svg
       .append('text')
       .attr('x', 200)
@@ -93,7 +92,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 270).attr('cy', 8).attr('r', 6).style('fill', '#C14B0B');
     vis.svg
       .append('text')
       .attr('x', 280)
@@ -102,7 +100,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 330).attr('cy', 8).attr('r', 6).style('fill', '#FE6847');
     vis.svg
       .append('text')
       .attr('x', 340)
@@ -111,7 +108,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 425).attr('cy', 8).attr('r', 6).style('fill', '#B66D0D');
     vis.svg
       .append('text')
       .attr('x', 435)
@@ -120,7 +116,6 @@ export class Treemap {
       .style('font-size', '15px')
       .attr('alignment-baseline', 'middle');
 
-    vis.svg.append('circle').attr('cx', 560).attr('cy', 8).attr('r', 6).style('fill', '#EBA6A9');
     vis.svg
       .append('text')
       .attr('x', 570)
@@ -131,10 +126,26 @@ export class Treemap {
 
     vis.svg
       .append('text')
-      .attr('x', 680)
+      .attr('x', 660)
       .attr('y', 8)
-      .text('number represents area in m\u00B2')
+      .text('natural area')
       .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg
+      .append('text')
+      .attr('x', 770)
+      .attr('y', 8)
+      .text('water')
+      .style('font-size', '15px')
+      .attr('alignment-baseline', 'middle');
+
+    vis.svg
+      .append('text')
+      .attr('x', 850)
+      .attr('y', 8)
+      .text('number is area in m\u00B2')
+      .style('font-size', '10px')
       .attr('alignment-baseline', 'middle');
 
     vis.updateVis();
@@ -166,6 +177,7 @@ export class Treemap {
   renderVis() {
     let vis = this;
 
+    // create treemap structure
     treemap()
       .tile(treemapBinary)
       .size([vis.width, vis.height])
@@ -176,6 +188,7 @@ export class Treemap {
       .paddingLeft(5)
       .round(true)(vis.root);
 
+    // add rectangles
     vis.chart
       .selectAll('rect')
       .data(vis.root.leaves())
@@ -186,7 +199,117 @@ export class Treemap {
       .attr('width', (d) => d.x1 - d.x0)
       .attr('height', (d) => d.y1 - d.y0)
       .style('stroke', 'black')
-      .style('fill', (d) => vis.colourScale(d.data.type))
+      .style('fill', (d) => vis.colourScale(d.data.type));
+
+    // add legend circles with filtering
+    vis.svg
+      .append('circle')
+      .attr('cx', 18)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'field')
+      .style('fill', '#66A182')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 80)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'greenhouse')
+      .style('fill', '#2176AE')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 190)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'garden')
+      .style('fill', '#FBB13C')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 270)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'barn')
+      .style('fill', '#C14B0B')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 330)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'farm_site_boundary')
+      .style('fill', '#FE6847')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 425)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'ceremonial_area')
+      .style('fill', '#B66D0D')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 560)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'residence')
+      .style('fill', '#EBA6A9')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 650)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'natural_area')
+      .style('fill', '#51344D')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+    vis.svg
+      .append('circle')
+      .attr('cx', 760)
+      .attr('cy', 8)
+      .attr('r', 6)
+      .attr('class', 'legend')
+      .attr('id', 'surface_water')
+      .style('fill', '2176AE')
+      .style('stroke', 'black')
+      .style('stroke-width', 0);
+
+    vis.svg.selectAll('.legend').on('click', (event, d) => {
+      if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+        if (filters.treemap.types.has(event.path[0].id)) {
+          filters.treemap.types.delete(event.path[0].id);
+          select('#' + event.path[0].id).style('stroke-width', 0);
+        } else {
+          filters.treemap.types.add(event.path[0].id);
+          select('#' + event.path[0].id).style('stroke-width', 4);
+        }
+      }
+      updateFilteredStates();
+      onFilter();
+    });
+
+    // tool tips
+    vis.chart
+      .selectAll('rect')
       .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
@@ -198,6 +321,22 @@ export class Treemap {
         select('#tooltip').style('display', 'none');
       });
 
+    // on click filtering by type
+    vis.chart.selectAll('rect').on('click', (event, d) => {
+      if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
+        if (filters.treemap.types.has(d.data.type)) {
+          filters.treemap.types.delete(d.data.type);
+          select('#' + d.data.type).style('stroke-width', 0);
+        } else {
+          filters.treemap.types.add(d.data.type);
+          select('#' + d.data.type).style('stroke-width', 4);
+        }
+      }
+      updateFilteredStates();
+      onFilter();
+    });
+
+    // add area labels
     vis.chart
       .selectAll('text')
       .data(vis.root.leaves())
@@ -212,4 +351,15 @@ export class Treemap {
       .attr('font-size', '10px')
       .attr('fill', 'white');
   }
+}
+
+// dashboard wide filter updating
+function onFilter() {
+  updateFilteredStates();
+  states.barChart.updateVis();
+  states.geoMap.updateVis();
+  states.treemap.updateVis();
+  setTimeout(() => {
+    states.bubbleChart.updateVis();
+  }, 1000);
 }

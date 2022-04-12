@@ -72,6 +72,9 @@ export const filters = {
     crop_group: undefined,
     crop_id: undefined,
   },
+  treemap: {
+    types: new Set(),
+  },
 };
 
 export const filteredStates = {
@@ -251,6 +254,20 @@ export function updateFilteredStates() {
       }
     });
     return hasSelectedFarm ? selectedFarms : farms;
+  });
+  filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
+    const selectedFarms = farms.filter(({ farm_id }) => {
+      var hasType = false;
+      states.locationsByFarmId[farm_id].forEach((d) => {
+        if (filters.treemap.types.size != 0 && filters.treemap.types.has(d.type)) {
+          hasType = true;
+        } else {
+          hasType = false;
+        }
+      });
+      return hasType;
+    });
+    return filters.treemap.types.size != 0 ? selectedFarms : farms;
   });
   filteredStates.farmIdSet = new Set(filteredStates.farms.map((farm) => farm.farm_id));
 }
