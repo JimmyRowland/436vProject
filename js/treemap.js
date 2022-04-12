@@ -173,6 +173,7 @@ export class Treemap {
       .paddingLeft(5)
       .round(true)(vis.root);
 
+    // const moused = filters.maps.mousedFarmIdSet.has(d.data.farm_id);
     vis.chart
       .selectAll('rect')
       .data(vis.root.leaves())
@@ -191,17 +192,21 @@ export class Treemap {
           .style('top', event.pageY + 'px')
           .html(getFarmTooltipContentTreeMap(filteredStates.farms, d));
       })
-      .on('mouseleave', () => {
+      .on('mouseover', (event, d) => {
+        filters.maps.mousedFarmIdSet.add(d.data.farm_id);
+        console.log(filters.maps.mousedFarmIdSet)
+        updateCharts();
+      })
+      .on('mouseleave', (event, d) => {
         select('#tooltip').style('display', 'none');
+        filters.maps.mousedFarmIdSet.delete(d.data.farm_id);
+        updateCharts();
       })
       .on('click', (event, d) => {
-        const selected = filters.geoMap.selectedFarmIdSet.has(d.data.farm_id);
-        console.log(d.data);
-        console.log(filters.treemap.selectedFarmIdSet);
+        const selected = filters.maps.selectedFarmIdSet.has(d.data.farm_id);
         selected
-              ? filters.geoMap.selectedFarmIdSet.delete(d.data.farm_id)
-              : filters.geoMap.selectedFarmIdSet.add(d.data.farm_id);
-        console.log(filters.treemap.selectedFarmIdSet);
+          ? filters.maps.selectedFarmIdSet.delete(d.data.farm_id)
+          : filters.maps.selectedFarmIdSet.add(d.data.farm_id);
         updateCharts();
       });
 
