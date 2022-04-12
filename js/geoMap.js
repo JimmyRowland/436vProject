@@ -157,7 +157,7 @@ export class GeoMap {
     vis.geoLayers.eachLayer((layer) => {
       layer.clearAllEventListeners();
       layer.on({
-        mouseover: (e) => {
+        mousemove: (e) => {
           e.target.setStyle({
             weight: 5,
             color: '#666',
@@ -243,7 +243,7 @@ export class GeoMap {
       farmCircle.removeEventListener();
       clickable &&
         farmCircle.on({
-          mouseover: (e) => {
+          mousemove: (e) => {
             select('#tooltip')
               .style('display', 'block')
               .style('left', e.originalEvent.clientX + 12 + 'px')

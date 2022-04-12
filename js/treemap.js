@@ -184,7 +184,7 @@ export class Treemap {
       .attr('height', (d) => d.y1 - d.y0)
       .style('stroke', 'black')
       .style('fill', (d) => vis.colourScale(d.data.type))
-      .on('mouseover', (event, d) => {
+      .on('mousemove', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 100 + 'px')
