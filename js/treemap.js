@@ -191,8 +191,14 @@ export class Treemap {
           .style('top', event.pageY + 'px')
           .html(getFarmTooltipContentTreeMap(filteredStates.farms, d));
       })
+      .on('mouseover', (event, d) => {
+        filters.maps.mousedFarmIdSet.add(d.data.farm_id);
+        states.geoMap.updateVis();
+      })
       .on('mouseleave', (event, d) => {
         select('#tooltip').style('display', 'none');
+        filters.maps.mousedFarmIdSet.delete(d.data.farm_id);
+        states.geoMap.updateVis();
       })
       .on('click', (event, d) => {
         const selected = filters.maps.selectedFarmIdSet.has(d.data.farm_id);
