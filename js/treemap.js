@@ -1,6 +1,6 @@
 import { group, hierarchy, scaleOrdinal, select, treemap, treemapBinary } from 'd3';
-import { filteredStates, filters, states, updateCharts } from './main';
-import { getFarmTooltipContentTreeMap, getfarmWithTypeByFarmId } from './utils';
+import { filteredStates, states } from './main';
+import { getFarmTooltipContentTreeMap, getLocationAreaByFarmIdLocationType } from './utils';
 
 export class Treemap {
   /**
@@ -146,8 +146,11 @@ export class Treemap {
   updateVis() {
     let vis = this;
 
-    vis.data = getfarmWithTypeByFarmId(filteredStates.selectedFarms, states.locationsByFarmId);
-    var groups = group(Object.values(vis.data), (d) => d.type);
+    vis.data = getLocationAreaByFarmIdLocationType(
+      filteredStates.selectedFarms,
+      states.locationsByFarmId,
+    );
+    const groups = group(Object.values(vis.data), (d) => d.type);
 
     vis.root = hierarchy(groups).sum((d) => d.area);
     vis.root.sort(function (a, b) {
