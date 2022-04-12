@@ -233,7 +233,6 @@ export class GeoMap {
       const farm = farmCircle.farm;
       const clickable = filteredStates.farmIdSet.has(farm.farm_id);
       const selected = filters.maps.selectedFarmIdSet.has(farm.farm_id);
-      // const moused = filters.maps.mousedFarmIdSet.has(farm.farm_id);
 
       farmCircle.setStyle({
         color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
@@ -282,11 +281,9 @@ export class GeoMap {
               ? filters.maps.selectedFarmIdSet.delete(farm.farm_id)
               : filters.maps.selectedFarmIdSet.add(farm.farm_id);
             farmCircle.setStyle({
-              color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
-                'rgb(255, 115, 0)' :
-                selected ?
-                  'red' :
-                  'rgb(51, 136, 255)'
+              color: selected ?
+                'red' :
+                'rgb(51, 136, 255)'
             });
             updateCharts();
           },

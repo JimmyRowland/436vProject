@@ -97,10 +97,10 @@ export class BubbleChart {
       .style('display', (d) => (d.parent === vis.root ? 'inline' : 'none'))
       .text((d) => d.data.name);
 
-    if (!vis.root.r) {
-      setTitleName('No Certifications Found');
-      return;
-    }
+    // if (!vis.root.r) {
+    //   setTitleName('No Certifications Found');
+    //   return;
+    // }
     zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
 
     function setCircleColor(obj) {
