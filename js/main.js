@@ -61,9 +61,8 @@ export const filters = {
     }, {}),
     userCount: {},
   },
-  maps: {
+  geoMap: {
     selectedFarmIdSet: new Set(),
-    mousedFarmIdSet: new Set(),
   },
   bubbleChart: {
     certification: undefined,
@@ -72,7 +71,10 @@ export const filters = {
   pieChart: {
     crop_group: undefined,
     crop_id: undefined,
-  }
+  },
+  treemap: {
+    types: new Set(),
+  },
 };
 
 export const filteredStates = {
@@ -237,14 +239,21 @@ export function updateFilteredStates() {
         (!filters.pieChart.crop_id ||
           states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
         (!filters.pieChart.crop_group ||
-          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id))
+          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id)) &&
+        Array.from(filters.treemap.types).reduce(
+          (hasSelectedLocationTypes, locationType) =>
+            hasSelectedLocationTypes &&
+            states.locationsByFarmId[farm.farm_id].find(({ type }) => type === locationType),
+          true,
+        )
       );
     }),
   );
+
   filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
     let hasSelectedFarm = false;
     const selectedFarms = farms.filter(({ farm_id }) => {
-      if (filters.maps.selectedFarmIdSet.has(farm_id)) {
+      if (filters.geoMap.selectedFarmIdSet.has(farm_id)) {
         hasSelectedFarm = true;
         return true;
       } else {
