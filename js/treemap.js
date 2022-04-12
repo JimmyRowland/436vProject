@@ -321,21 +321,6 @@ export class Treemap {
         select('#tooltip').style('display', 'none');
       });
 
-    // on click filtering by type
-    vis.chart.selectAll('rect').on('click', (event, d) => {
-      if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-        if (filters.treemap.types.has(d.data.type)) {
-          filters.treemap.types.delete(d.data.type);
-          select('#' + d.data.type).style('stroke-width', 0);
-        } else {
-          filters.treemap.types.add(d.data.type);
-          select('#' + d.data.type).style('stroke-width', 4);
-        }
-      }
-      updateFilteredStates();
-      onFilter();
-    });
-
     // add area labels
     vis.chart
       .selectAll('text')
