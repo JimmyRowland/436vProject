@@ -1,5 +1,5 @@
-import { scaleThreshold, scaleSqrt, schemeBlues, extent, sum, select } from 'd3';
-import { map, tileLayer, geoJSON, control, circle, DomUtil } from 'leaflet';
+import { extent, scaleSqrt, scaleThreshold, schemeBlues, select, sum } from 'd3';
+import { circle, control, DomUtil, geoJSON, map, tileLayer } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   areaColorScale,
@@ -72,7 +72,7 @@ export class GeoMap {
     vis.map.on({
       dblclick: (e) => {
         vis.map.setView(this.choropleth.center, this.choropleth.zoom);
-        filters.maps.selectedFarmIdSet.clear();
+        filters.geoMap.selectedFarmIdSet.clear();
         updateCharts();
       },
     });
@@ -187,7 +187,7 @@ export class GeoMap {
           const farmsToDeselect = [];
           for (const farm of farms) {
             const clickable = filteredStates.farmIdSet.has(farm.farm_id);
-            const selected = filters.maps.selectedFarmIdSet.has(farm.farm_id);
+            const selected = filters.geoMap.selectedFarmIdSet.has(farm.farm_id);
             if (clickable) {
               !selected && farmsToSelect.push(farm);
               selected && farmsToDeselect.push(farm);
@@ -195,7 +195,7 @@ export class GeoMap {
           }
           if (farmsToSelect.length) {
             for (const { farm_id } of farmsToSelect) {
-              filters.maps.selectedFarmIdSet.add(farm_id);
+              filters.geoMap.selectedFarmIdSet.add(farm_id);
             }
             e.target.setStyle((d) => ({
               weight: 5,
@@ -206,7 +206,7 @@ export class GeoMap {
             vis.map.fitBounds(e.target.getBounds());
           } else {
             for (const { farm_id } of farmsToDeselect) {
-              filters.maps.selectedFarmIdSet.delete(farm_id);
+              filters.geoMap.selectedFarmIdSet.delete(farm_id);
             }
             vis.map.setView(this.choropleth.center, this.choropleth.zoom);
           }
@@ -232,14 +232,10 @@ export class GeoMap {
     for (const farmCircle of vis.circles) {
       const farm = farmCircle.farm;
       const clickable = filteredStates.farmIdSet.has(farm.farm_id);
-      const selected = filters.maps.selectedFarmIdSet.has(farm.farm_id);
+      const selected = filters.geoMap.selectedFarmIdSet.has(farm.farm_id);
 
       farmCircle.setStyle({
-        color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
-          'rgb(255, 115, 0)' :
-          selected ?
-            'red' :
-            'rgb(51, 136, 255)',
+        color: clickable && selected ? 'red' : 'rgb(51, 136, 255)',
         fillColor: areaColorScale(getFarmAreaBucket(farm)),
         opacity: clickable ? 0.8 : 0,
         fillOpacity: clickable ? 1 : 0.1,
@@ -247,36 +243,29 @@ export class GeoMap {
       farmCircle.removeEventListener();
       clickable &&
         farmCircle.on({
-          mouseover: (event) => {
-            filters.maps.mousedFarmIdSet.add(farm.farm_id);
+          mouseover: (e) => {
             farmCircle.setStyle({
-              color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
-                'rgb(255, 115, 0)' :
-                selected ?
-                  'red' :
-                  'rgb(51, 136, 255)'
+              color: 'rgb(255, 115, 0)',
             });
             select('#tooltip')
               .style('display', 'block')
-              .style('left', event.originalEvent.clientX + 12 + 'px')
-              .style('top', event.originalEvent.clientY + 12 + 'px')
+              .style('left', e.originalEvent.clientX + 12 + 'px')
+              .style('top', e.originalEvent.clientY + 12 + 'px')
               .html(getFarmTooltipContent(farm));
           },
           mouseout: (e) => {
             select('#tooltip').style('display', 'none');
-            filters.maps.mousedFarmIdSet.delete(farm.farm_id);
             farmCircle.setStyle({
-              color: filters.maps.mousedFarmIdSet.has(farm.farm_id) ?
-                'rgb(255, 115, 0)' :
-                selected ?
-                  'red' :
-                  'rgb(51, 136, 255)'
+              color: selected ? 'red' : 'rgb(51, 136, 255)',
             });
           },
           click: (e) => {
             selected
-              ? filters.maps.selectedFarmIdSet.delete(farm.farm_id)
-              : filters.maps.selectedFarmIdSet.add(farm.farm_id);
+              ? filters.geoMap.selectedFarmIdSet.delete(farm.farm_id)
+              : filters.geoMap.selectedFarmIdSet.add(farm.farm_id);
+            farmCircle.setStyle({
+              color: !selected ? 'red' : 'rgb(51, 136, 255)',
+            });
             updateCharts();
           },
         });
