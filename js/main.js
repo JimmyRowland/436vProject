@@ -6,6 +6,7 @@ import {
   farmNumberByCountryIdCenter,
   farmNumberByCountryIdZoom,
   getfarmWithAreaByFarmId,
+  getSelectedFarms,
 } from './utils';
 import { PieChart } from './piechart';
 import produce from 'immer';
@@ -78,11 +79,14 @@ export const filters = {
 };
 
 export const filteredStates = {
-  farms: {},
+  farms: [],
+  selectedFarms: [],
   farmIdSet: new Set(),
   farmWithAreaByFarmId: {},
   // barchart
   farmsByUserCountAreaBucket: {},
+  sunburstSelectedFarms: [],
+  bubbleSelectedFarms: [],
 };
 
 Promise.all([
@@ -227,19 +231,12 @@ function fillChartDivWidth() {
 }
 
 export function updateFilteredStates() {
-  filteredStates.farms = produce([], () =>
+  const farmsFilteredByAreaUserCountLocationType = produce([], () =>
     Object.values(filteredStates.farmWithAreaByFarmId).filter((farm) => {
       const areaBucket = areaAggregationBreakpoints.find((area) => area <= farm.total_area);
       return (
         filters.barchart.area[areaBucket] &&
         filters.barchart.userCount[farm.number_of_users] &&
-        (!filters.bubbleChart.certification ||
-          filters.bubbleChart.certification === farm.certification) &&
-        (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier) &&
-        (!filters.pieChart.crop_id ||
-          states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
-        (!filters.pieChart.crop_group ||
-          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id)) &&
         Array.from(filters.treemap.types).reduce(
           (hasSelectedLocationTypes, locationType) =>
             hasSelectedLocationTypes &&
@@ -250,26 +247,42 @@ export function updateFilteredStates() {
     }),
   );
 
-  filteredStates.selectedFarms = produce(filteredStates.farms, (farms) => {
-    let hasSelectedFarm = false;
-    const selectedFarms = farms.filter(({ farm_id }) => {
-      if (filters.geoMap.selectedFarmIdSet.has(farm_id)) {
-        hasSelectedFarm = true;
-        return true;
-      } else {
-        return false;
-      }
-    });
-    return hasSelectedFarm ? selectedFarms : farms;
-  });
+  filteredStates.farms = farmsFilteredByAreaUserCountLocationType.filter(
+    (farm) =>
+      (!filters.bubbleChart.certification ||
+        filters.bubbleChart.certification === farm.certification) &&
+      (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier) &&
+      (!filters.pieChart.crop_id ||
+        states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
+      (!filters.pieChart.crop_group ||
+        states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id)),
+  );
+
+  filteredStates.selectedFarms = getSelectedFarms(filteredStates.farms);
+
+  filteredStates.sunburstSelectedFarms = getSelectedFarms(
+    farmsFilteredByAreaUserCountLocationType.filter(
+      (farm) =>
+        (!filters.bubbleChart.certification ||
+          filters.bubbleChart.certification === farm.certification) &&
+        (!filters.bubbleChart.certifier || filters.bubbleChart.certifier === farm.certifier),
+    ),
+  );
+
+  filteredStates.bubbleSelectedFarms = getSelectedFarms(
+    farmsFilteredByAreaUserCountLocationType.filter(
+      (farm) =>
+        (!filters.pieChart.crop_id ||
+          states.farmIdSetByCropId[filters.pieChart.crop_id].has(farm.farm_id)) &&
+        (!filters.pieChart.crop_group ||
+          states.farmIdSetByCropGroup[filters.pieChart.crop_group].has(farm.farm_id)),
+    ),
+  );
+
   filteredStates.farmIdSet = new Set(filteredStates.farms.map((farm) => farm.farm_id));
 }
 
 export function updateCharts() {
-  filters.bubbleChart.certifier = undefined;
-  filters.bubbleChart.certification = undefined;
-  filters.pieChart.crop_id = undefined;
-  filters.pieChart.crop_group = undefined;
   updateFilteredStates();
   states.barChart.updateVis();
   states.geoMap.updateVis();

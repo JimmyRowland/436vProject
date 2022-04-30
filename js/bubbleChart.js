@@ -1,4 +1,4 @@
-import { scaleOrdinal, schemeCategory10, select, pack, hierarchy, hsl, interpolateZoom } from 'd3';
+import { hierarchy, hsl, interpolateZoom, pack, scaleOrdinal, schemeCategory10, select } from 'd3';
 import { filteredStates, filters, states, updateFilteredStates } from './main';
 import { getCertifierGroups } from './utils';
 
@@ -25,7 +25,9 @@ export class BubbleChart {
    */
   initVis() {
     const vis = this;
-    vis.colorScale = scaleOrdinal().range(schemeCategory10);
+    vis.colorScale = scaleOrdinal()
+      .range(schemeCategory10)
+      .domain(filteredStates.farms.map(({ certification }) => certification));
 
     vis.svg = select(vis.config.parentElement)
       .append('svg')
@@ -48,7 +50,7 @@ export class BubbleChart {
    */
   updateVis() {
     const vis = this;
-    const certificationGroup = getCertifierGroups(filteredStates.selectedFarms);
+    const certificationGroup = getCertifierGroups(filteredStates.bubbleSelectedFarms);
 
     vis.root = pack()
       .size([width - 300, height])
@@ -66,8 +68,6 @@ export class BubbleChart {
    */
   renderVis() {
     const vis = this;
-    setTitleName();
-
     vis.svg.on('click', () => zoom(vis.root));
     const node = vis.chart
       .selectAll('circle')
@@ -76,7 +76,7 @@ export class BubbleChart {
       .attr('fill', setCircleColor)
       .attr('pointer-events', (d) => (!d.children ? 'none' : null))
       .attr('opacity', (d) => (d.height === 0 ? 0.3 : 1))
-      .on('mousemove', function (event, d) {
+      .on('mouseover', function (event, d) {
         select(this).attr('stroke', '#000');
         select('#tooltip')
           .style('display', 'block')
@@ -99,9 +99,35 @@ export class BubbleChart {
 
     if (!vis.root.r) {
       setTitleName('No Certifications Found');
+      if (filters.bubbleChart.certifier || filters.bubbleChart.certification) {
+        console.log('error');
+        filters.bubbleChart.certification = undefined;
+        filters.bubbleChart.certifier = undefined;
+        onFilter();
+      }
       return;
+    } else {
+      let focus;
+      if (filters.bubbleChart.certification) {
+        focus = vis.root.children.find(
+          ({ data: { name } }) => name === filters.bubbleChart.certification,
+        );
+      }
+      if (filters.bubbleChart.certifier) {
+        focus = focus.children.find(({ data: { name } }) => name === filters.bubbleChart.certifier);
+      }
+      if (focus) {
+        vis.focus = focus;
+        zoom(vis.focus);
+      } else if (filters.bubbleChart.certification) {
+        filters.bubbleChart.certification = undefined;
+        filters.bubbleChart.certifier = undefined;
+        onFilter();
+      } else {
+        setTitleName();
+        zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
+      }
     }
-    zoomTo([vis.root.x, vis.root.y, vis.root.r * 2]);
 
     function setCircleColor(obj) {
       if (obj.height === 0) {
@@ -149,40 +175,42 @@ export class BubbleChart {
         });
 
       setTitleName(d.data.name);
-      if (!filters.pieChart.crop_group && !filters.pieChart.crop_id) {
-        const prevCertification = filters.bubbleChart.certification;
-        const prevCertifier = filters.bubbleChart.certifier;
-        switch (d.depth) {
-          case 0:
-            filters.bubbleChart.certification = undefined;
-            filters.bubbleChart.certifier = undefined;
-            break;
-          case 1:
-            filters.bubbleChart.certification = d.data.name;
-            filters.bubbleChart.certifier = undefined;
-            break;
-          case 2:
-            filters.bubbleChart.certifier = d.data.name;
-            filters.bubbleChart.certification = d.parent.data.name;
-            break;
-          case 3:
-            filters.bubbleChart.certifier = d.parent.data.name;
-            filters.bubbleChart.certification = d.parent.parent.data.name;
-            break;
-        }
-        if (
-          filters.bubbleChart.certifier !== prevCertifier ||
-          filters.bubbleChart.certification !== prevCertification
-        ) {
-          updateFilteredStates();
-          states.barChart.updateVis();
-          states.geoMap.updateVis();
-          states.treemap.updateVis();
-          setTimeout(() => states.piechart.updateVis(), 1000);
-        }
+      const prevCertification = filters.bubbleChart.certification;
+      const prevCertifier = filters.bubbleChart.certifier;
+      switch (d.depth) {
+        case 0:
+          filters.bubbleChart.certification = undefined;
+          filters.bubbleChart.certifier = undefined;
+          break;
+        case 1:
+          filters.bubbleChart.certification = d.data.name;
+          filters.bubbleChart.certifier = undefined;
+          break;
+        case 2:
+          filters.bubbleChart.certifier = d.data.name;
+          filters.bubbleChart.certification = d.parent.data.name;
+          break;
+        case 3:
+          filters.bubbleChart.certifier = d.parent.data.name;
+          filters.bubbleChart.certification = d.parent.parent.data.name;
+          break;
+      }
+      if (
+        filters.bubbleChart.certifier !== prevCertifier ||
+        filters.bubbleChart.certification !== prevCertification
+      ) {
+        onFilter();
       }
     }
   }
+}
+
+function onFilter() {
+  updateFilteredStates();
+  states.barChart.updateVis();
+  states.geoMap.updateVis();
+  states.treemap.updateVis();
+  setTimeout(() => states.piechart.updateVis(), 1000);
 }
 
 function setTitleName(name = 'certification') {

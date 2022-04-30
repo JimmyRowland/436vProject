@@ -1,5 +1,5 @@
 import produce from 'immer';
-import { states } from './main';
+import { filters, states } from './main';
 import { scaleOrdinal, schemeYlGn } from 'd3';
 
 export const getFarmsCountryIdMap = (farms, countryNameIdMap) => {
@@ -56,6 +56,21 @@ export const getfarmWithAreaByFarmId = (farms, locationsByFarmId) => {
     return locationsByFarmId;
   }, {});
 };
+
+export function getSelectedFarms(farms) {
+  return produce(farms, (farms) => {
+    let hasSelectedFarm = false;
+    const selectedFarms = farms.filter(({ farm_id }) => {
+      if (filters.geoMap.selectedFarmIdSet.has(farm_id)) {
+        hasSelectedFarm = true;
+        return true;
+      } else {
+        return false;
+      }
+    });
+    return hasSelectedFarm ? selectedFarms : farms;
+  });
+}
 
 export const farmNumberByCountryIdDomain = [1, 5, 10, 50, 100];
 export const farmNumberByCountryIdCenter = [0, 10.444547];

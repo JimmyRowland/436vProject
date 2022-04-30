@@ -307,7 +307,7 @@ export class Treemap {
     // tool tips
     vis.chart
       .selectAll('rect')
-      .on('mousemove', (event, d) => {
+      .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 100 + 'px')

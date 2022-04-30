@@ -1,4 +1,4 @@
-import { max, scaleLinear, select, stack, axisBottom, axisLeft, scaleBand } from 'd3';
+import { axisBottom, axisLeft, max, scaleBand, scaleLinear, select, stack } from 'd3';
 import { filteredStates, filters, states, updateCharts } from './main';
 import {
   areaAggregationBreakpoints,
@@ -240,7 +240,7 @@ export class Barchart {
 
     vis.chart
       .selectAll('rect')
-      .on('mousemove', (event, d) => {
+      .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX + vis.config.tooltipPadding + 'px')

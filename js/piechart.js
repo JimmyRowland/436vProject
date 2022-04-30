@@ -53,8 +53,10 @@ export class PieChart {
     vis.pathG = vis.chart.append('g');
 
     vis.labelG = vis.chart.append('g').attr('pointer-events', 'none').attr('text-anchor', 'middle');
-    vis.data = getCropGroupData(filteredStates.farms);
-    vis.colorScale = scaleOrdinal(quantize(interpolateRainbow, vis.data.children.length + 1));
+
+    vis.colorScale = scaleOrdinal(
+      quantize(interpolateRainbow, Object.keys(states.farmIdSetByCropGroup).length + 1),
+    );
 
     vis.parent = vis.chart
       .append('circle')
@@ -98,18 +100,14 @@ export class PieChart {
           .attrTween('transform', (d) => () => vis.labelTransform(d.current));
         if (p.depth === 0) {
           setTitleName();
-          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-            filters.pieChart.crop_group = undefined;
-            filters.pieChart.crop_id = undefined;
-            onFilter();
-          }
+          filters.pieChart.crop_group = undefined;
+          filters.pieChart.crop_id = undefined;
+          onFilter();
         } else if (p.depth === 1) {
           setTitleName(p.data.name);
-          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-            filters.pieChart.crop_group = p.data.name;
-            filters.pieChart.crop_id = undefined;
-            onFilter();
-          }
+          filters.pieChart.crop_group = p.data.name;
+          filters.pieChart.crop_id = undefined;
+          onFilter();
         }
       });
     vis.updateVis();
@@ -117,7 +115,7 @@ export class PieChart {
 
   updateVis() {
     let vis = this;
-    vis.data = getCropGroupData(filteredStates.selectedFarms);
+    vis.data = getCropGroupData(filteredStates.sunburstSelectedFarms);
     const root = hierarchy(vis.data)
       .sum((d) => d.value)
       .sort((a, b) => b.value - a.value);
@@ -128,7 +126,6 @@ export class PieChart {
 
   renderVis() {
     let vis = this;
-    setTitleName();
 
     vis.path = vis.pathG
       .selectAll('path')
@@ -140,7 +137,7 @@ export class PieChart {
       })
       .attr('fill-opacity', (d) => (vis.arcVisible(d.current) ? (d.children ? 0.6 : 0.4) : 0))
       .attr('d', (d) => vis.arcGenerator(d.current))
-      .on('mousemove', (event, d) => {
+      .on('mouseover', (event, d) => {
         select('#tooltip')
           .style('display', 'block')
           .style('left', event.pageX - 5 * vis.config.tooltipPadding + 'px')
@@ -155,58 +152,53 @@ export class PieChart {
       .filter((d) => d.children)
       .style('cursor', 'pointer')
       .on('click', (event, p) => {
-        if (p.depth === 3) return;
-        vis.parent.datum(p.parent);
-
-        vis.root.each(
-          (d) =>
-            (d.target = {
-              x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-              x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
-              y0: Math.max(0, d.y0 - p.depth),
-              y1: Math.max(0, d.y1 - p.depth),
-            }),
-        );
-
-        const t = vis.chart.transition().duration(500);
-
-        vis.path
-          .transition(t)
-          .tween('data', (d) => {
-            const i = interpolate(d.current, d.target);
-            return (t) => (d.current = i(t));
-          })
-          .filter(function (d) {
-            return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
-          })
-          .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
-          .attrTween('d', (d) => () => vis.arcGenerator(d.current));
-
-        vis.label
-          .filter(function (d) {
-            return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
-          })
-          .transition(t)
-          .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
-          .attrTween('transform', (d) => () => vis.labelTransform(d.current));
+        zoom(p);
         if (p.depth === 1) {
-          setTitleName(p.data.name);
-
-          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-            filters.pieChart.crop_group = p.data.name;
-            filters.pieChart.crop_id = undefined;
-            onFilter();
-          }
+          filters.pieChart.crop_group = p.data.name;
+          filters.pieChart.crop_id = undefined;
+          onFilter();
         } else if (p.depth === 2) {
-          setTitleName(p.data.name);
-
-          if (!filters.bubbleChart.certification && !filters.bubbleChart.certifier) {
-            filters.pieChart.crop_group = p.parent.data.name;
-            filters.pieChart.crop_id = p.data.crop_id;
-            onFilter();
-          }
+          filters.pieChart.crop_group = p.parent.data.name;
+          filters.pieChart.crop_id = p.data.crop_id;
+          onFilter();
         }
       });
+
+    const zoom = (p) => {
+      if (p.depth === 3) return;
+      setTitleName(p.data.name);
+      vis.parent.datum(p.parent);
+      vis.root.each(
+        (d) =>
+          (d.target = {
+            x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+            x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+            y0: Math.max(0, d.y0 - p.depth),
+            y1: Math.max(0, d.y1 - p.depth),
+          }),
+      );
+      const t = vis.chart.transition().duration(500);
+
+      vis.path
+        .transition(t)
+        .tween('data', (d) => {
+          const i = interpolate(d.current, d.target);
+          return (t) => (d.current = i(t));
+        })
+        .filter(function (d) {
+          return +this.getAttribute('fill-opacity') || vis.arcVisible(d.target);
+        })
+        .attr('fill-opacity', (d) => (vis.arcVisible(d.target) ? (d.children ? 0.6 : 0.4) : 0))
+        .attrTween('d', (d) => () => vis.arcGenerator(d.current));
+
+      vis.label
+        .filter(function (d) {
+          return +this.getAttribute('fill-opacity') || vis.labelVisible(d.target);
+        })
+        .transition(t)
+        .attr('fill-opacity', (d) => +vis.labelVisible(d.target))
+        .attrTween('transform', (d) => () => vis.labelTransform(d.current));
+    };
 
     const truncate = (str, max) =>
       str.length < max ? str : `${str.substr(0, str.substr(0, max).lastIndexOf(' '))}${'...'}`;
@@ -217,6 +209,29 @@ export class PieChart {
       .attr('fill-opacity', (d) => +vis.labelVisible(d.current))
       .attr('transform', (d) => vis.labelTransform(d.current))
       .text((d) => truncate(d.data.name, 30));
+
+    let focus;
+    if (filters.pieChart.crop_group) {
+      focus = vis.root.children.find(({ data: { name } }) => name === filters.pieChart.crop_group);
+    }
+    if (filters.pieChart.crop_id) {
+      focus = focus.children.find((node) => {
+        const {
+          data: { crop_id },
+        } = node;
+        return crop_id === filters.pieChart.crop_id;
+      });
+    }
+    if (focus) {
+      zoom(focus);
+    } else if (filters.pieChart.crop_group) {
+      setTitleName();
+      filters.pieChart.crop_group = undefined;
+      filters.pieChart.crop_id = undefined;
+      onFilter();
+    } else {
+      setTitleName();
+    }
   }
 
   arcVisible(d) {

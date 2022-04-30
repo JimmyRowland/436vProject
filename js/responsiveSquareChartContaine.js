@@ -6,7 +6,7 @@ export function responsiveSquareChartContainer(parentElement) {
   return select(parentElement)
     .append('div')
     .attr('style', `width: ${squareDim}px; height: ${squareDim}px`)
-    .on('mousemove', (event, d) => {
+    .on('mouseover', (event, d) => {
       const windowWidth = min([window.innerWidth, window.innerHeight]);
       select(event.target).attr('style', `width: ${windowWidth}px; height: ${windowWidth}px`);
     })
